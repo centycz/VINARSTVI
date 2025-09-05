@@ -1532,6 +1532,7 @@ if ($action === 'cancel-items') {
     // BAR ITEMS
     if ($action === 'bar-items') {
         try {
+            // COMMENT_MARKER_FOR_FUTURE_REFERENCE: Modified to return all pending/preparing items regardless of item_type
             $stmt = $pdo->prepare("
                 SELECT 
                     oi.*,
@@ -1547,8 +1548,9 @@ if ($action === 'cancel-items') {
                 JOIN orders o ON oi.order_id = o.id
                 JOIN table_sessions ts ON o.table_session_id = ts.id
                 JOIN restaurant_tables rt ON ts.table_number = rt.table_number
-                WHERE oi.item_type IN ('drink', 'pivo', 'vino', 'nealko', 'spritz', 'negroni', 'koktejl', 'digestiv', 'kava')
-                AND oi.status IN ('pending','preparing')
+                -- COMMENTED OUT FOR TRACEABILITY: Previous logic filtered by specific drink types
+                -- WHERE oi.item_type IN ('drink', 'pivo', 'vino', 'nealko', 'spritz', 'negroni', 'koktejl', 'digestiv', 'kava')
+                WHERE oi.status IN ('pending','preparing')
                 ORDER BY 
                     CASE WHEN o.printed_at IS NULL THEN 0 ELSE 1 END,
                     o.created_at DESC
