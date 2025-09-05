@@ -135,7 +135,7 @@ function canAccessTab($tab, $user_role) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PdC Systém - Centrum aplikací</title>
+    <title>Stávek Systém - Centrum aplikací</title>
     <style>
         * {
             margin: 0;
@@ -500,7 +500,7 @@ function canAccessTab($tab, $user_role) {
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🍓 PdC Systém</h1>
+            <h1>🍓 Vinařství Stávek </h1>
             <p>Centrum aplikací a služeb</p>
         </div>
 
