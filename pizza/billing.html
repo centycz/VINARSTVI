@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Účtování - Přehled stolů</title>
+<style>
+/* ====== ZÁKLADNÍ STYLING ====== */
+body{
+  font-family:'Segoe UI',Tahoma,Verdana,sans-serif;
+  background:linear-gradient(135deg,#ff5858 0%,#f09819 100%);
+  min-height:100vh;
+  padding:20px;
+  margin:0;
+}
+.header{text-align:center;margin-bottom:30px;}
+.header h1{color:#fff;font-size:2.4em;margin:0 0 10px;text-shadow:2px 2px 4px rgba(0,0,0,.3);}
+.nav-links{display:flex;justify-content:center;gap:15px;flex-wrap:wrap;margin-bottom:20px;}
+.nav-link{
+  padding:10px 20px;
+  background:rgba(255,255,255,.2);
+  color:#fff;
+  text-decoration:none;
+  border-radius:25px;
+  font-weight:500;
+  transition:.25s;
+}
+.nav-link:hover{background:rgba(255,255,255,.3);transform:translateY(-2px);}
+.nav-link.active{background:#fff;color:#ff5858;}
+/* Stav čekajících položek po zaplacení */
+.order-card.awaiting-delivery {
+  border-color:#ff9800;
+  background:#fffaf2;
+}
+.badge-awaiting {
+  background:#ff9800;
+  color:#fff;
+  font-size:.65em;
+  padding:3px 8px;
+  border-radius:10px;
+  font-weight:700;
+  letter-spacing:.5px;
+}
+.awaiting-item-row {
+  background:rgba(255,152,0,.08);
+  border:1px dashed #ffb74d;
+  padding:6px 8px;
+  border-radius:8px;
+  margin:4px 0;
+  font-size:12px;
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+}
+.awaiting-item-row span.name {
+  font-weight:600;
+  color:#e65100;
+}
+
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  background:#fff;
+  border-radius:15px;
+  padding:30px;
+  box-shadow:0 15px 35px rgba(0,0,0,.12);
+}
+.section-title{font-size:1.5em;font-weight:700;color:#ff5858;margin:0 0 20px;}
+.orders-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;}
+
+.order-card{
+  border:3px solid #ff5858;
+  border-radius:15px;
+  padding:18px 20px;
+  background:#fff;
+  box-shadow:0 5px 15px rgba(0,0,0,.07);
+  display:flex;
+  flex-direction:column;
+  transition:.25s;
+}
+.order-card:hover{transform:translateY(-3px);}
+.order-card.fully-paid{border-color:#28a745;background:#f4fff6;}
+
+.order-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+  padding-bottom:8px;
+  border-bottom:2px solid #eee;
+}
+.table-number{
+  font-size:1.25em;
+  font-weight:700;
+  color:#f09819;
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+.paid-badge{
+  background:#28a745;
+  color:#fff;
+  font-size:.7em;
+  padding:3px 8px;
+  border-radius:10px;
+  font-weight:600;
+  letter-spacing:.5px;
+}
+
+.bill-list{margin:0 0 8px;padding:0;list-style:none;}
+.bill-item{
+  border-bottom:1px solid #ffe4bf;
+  padding:6px 0;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  font-size:13px;
+  gap:10px;
+}
+.bill-item:last-child{border-bottom:none;}
+.bill-item.fully-paid-item{
+  opacity:0.7;
+  background:rgba(40, 167, 69, 0.05);
+}
+.bill-left{flex:1;min-width:0;}
+.bill-name{font-weight:600;display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.bill-qty{color:#777;margin-left:4px;font-size:12px;}
+.bill-note{
+  font-size:11px;
+  color:#a65;
+  font-style:italic;
+  display:block;
+  margin-top:2px;
+  max-width:220px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.status-badge{
+  font-size:10px;
+  font-weight:600;
+  padding:2px 6px;
+  border-radius:8px;
+  letter-spacing:.3px;
+}
+.status-waiting{background:#ff5858;color:#fff;}
+.status-preparing{background:#ffb347;color:#222;}
+.status-delivered{background:#28a745;color:#fff;}
+.status-cancelled{background:#721c24;color:#fff;}
+.status-paid{background:#0e472e;color:#fff;}
+.status-ready{background:#ffa000;color:#222;}
+.status-to-deliver{background:#ff9800;color:#222;}
+
+.edit-btn{
+  background:#ffe2d1;
+  border:1px solid #ff9a76;
+  color:#b7410e;
+  padding:2px 8px;
+  border-radius:6px;
+  font-size:11px;
+  cursor:pointer;
+  font-weight:600;
+}
+.edit-btn:hover{background:#ffd3bd;}
+
+.btn{
+  padding:8px 15px;
+  border:none;
+  border-radius:8px;
+  font-weight:600;
+  font-size:13px;
+  cursor:pointer;
+  transition:.25s;
+  background:#ff5858;
+  color:#fff;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.btn:hover{background:#f09819;}
+.btn-reprint{background:#28a745;}
+.btn-reprint:hover{background:#218838;}
+
+.last-update{text-align:center;color:#555;font-size:.9em;margin-top:18px;}
+.empty-state{text-align:center;padding:40px 10px;color:#666;font-size:.95em;}
+
+.modal-bg{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:1300;
+}
+
+.pay-modal{
+  background:#fff;
+  width:95%;
+  max-width:1000px;
+  max-height:94vh;
+  display:flex;
+  flex-direction:column;
+  border-radius:20px;
+  box-shadow:0 14px 50px rgba(0,0,0,.45);
+  overflow:hidden;
+}
+
+.pm-header{
+  padding:16px 22px;
+  background:#ff5858;
+  color:#fff;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.pm-header h2{margin:0;font-size:19px;font-weight:600;}
+.pm-close{
+  background:rgba(255,255,255,.18);
+  border:none;
+  color:#fff;
+  font-size:20px;
+  cursor:pointer;
+  border-radius:8px;
+  padding:4px 10px;
+}
+.pm-close:hover{background:rgba(255,255,255,.3);}
+.pm-body{padding:16px 22px;overflow:auto;flex:1;}
+.pm-footer{
+  padding:14px 22px;
+  border-top:1px solid #eee;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:12px;
+  background:#fafafa;
+}
+
+.mode-toggle{
+  display:inline-flex;
+  border:2px solid #ff5858;
+  border-radius:10px;
+  overflow:hidden;
+  margin:0 0 14px;
+}
+.mode-btn{
+  background:#fff;
+  border:none;
+  padding:10px 18px;
+  font-weight:600;
+  color:#ff5858;
+  cursor:pointer;
+  font-size:13px;
+}
+.mode-btn.active{background:#ff5858;color:#fff;}
+
+.employee-box{
+  margin:10px 0 16px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:18px;
+  align-items:center;
+}
+.employee-box input{
+  padding:8px 10px;
+  border:1px solid #ccc;
+  border-radius:8px;
+  font-size:14px;
+  min-width:220px;
+}
+
+.method-group{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.method-group label{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  cursor:pointer;
+  background:#f4f4f4;
+  padding:8px 14px;
+  border-radius:10px;
+  font-weight:600;
+  border:2px solid transparent;
+}
+.method-group label.active{border-color:#ff5858;background:#ffe9e1;}
+
+.items-wrap{
+  border:1px solid #eee;
+  border-radius:14px;
+  overflow:auto;
+  background:#fff;
+  max-height:42vh;
+}
+.items-table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:820px;
+  font-size:13px;
+}
+.items-table th,.items-table td{
+  padding:6px 8px;
+  border-bottom:1px solid #eee;
+  text-align:left;
+  vertical-align:middle;
+}
+.items-table th{
+  background:#fafafa;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.5px;
+  position:sticky;
+  top:0;
+  z-index:1;
+}
+
+.qty-ctrls{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+}
+.qty-ctrls button{
+  background:#ff5858;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  width:28px;
+  height:28px;
+  cursor:pointer;
+  font-weight:700;
+  font-size:16px;
+  line-height:1;
+}
+.qty-ctrls button:disabled{opacity:.35;cursor:not-allowed;}
+
+.item-note{
+  font-size:10px;
+  color:#a65;
+  font-style:italic;
+  display:block;
+  margin-top:2px;
+  max-width:180px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.amount-cell{text-align:right;font-weight:600;}
+.select-all-btn{background:#4a5568;}
+.select-all-btn:hover{background:#2d3748;}
+
+.summary{
+  display:flex;
+  gap:16px;
+  font-size:12px;
+  font-weight:600;
+  flex-wrap:wrap;
+  color:#222;
+  align-items:center;
+}
+.total-box{font-weight:700;color:#ff5858;}
+.action-primary{background:#157347;}
+.action-primary:hover{background:#0f5b2c;}
+.pay-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+.cancel-row-btn{
+  background:#dc3545;
+  border:none;
+  color:#fff;
+  font-size:13px;
+  border-radius:6px;
+  padding:4px 8px;
+  cursor:pointer;
+}
+.cancel-row-btn:hover{background:#c82333;}
+
+.cancel-modal-bg{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:1400;
+}
+.cancel-modal{
+  background:#fff;
+  width:95%;
+  max-width:420px;
+  border-radius:18px;
+  box-shadow:0 10px 38px rgba(0,0,0,.4);
+  padding:24px 26px;
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+.cancel-modal h3{margin:0;color:#dc3545;font-size:20px;text-align:center;}
+.cancel-line{font-size:14px;font-weight:600;}
+.cancel-qty{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:center;
+  margin:6px 0;
+}
+.cancel-qty button{
+  background:#dc3545;
+  color:#fff;
+  border:none;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  font-size:18px;
+  font-weight:700;
+  cursor:pointer;
+}
+.cancel-qty button:disabled{opacity:.3;cursor:not-allowed;}
+.cancel-qty span{min-width:40px;text-align:center;font-weight:700;font-size:16px;}
+.cancel-reason textarea{
+  width:100%;
+  min-height:70px;
+  resize:vertical;
+  border:1px solid #ccc;
+  border-radius:8px;
+  padding:8px;
+  font-family:inherit;
+  font-size:13px;
+}
+.cancel-actions{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.cancel-actions button{
+  flex:1;
+  padding:10px 14px;
+  border:none;
+  border-radius:10px;
+  font-weight:600;
+  cursor:pointer;
+}
+.btn-grey{background:#6c757d;color:#fff;}
+.btn-grey:hover{background:#545c63;}
+.btn-red{background:#dc3545;color:#fff;}
+.btn-red:hover{background:#c82333;}
+
+.toast-container{
+  position:fixed;
+  right:16px;
+  bottom:16px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  z-index:3000;
+}
+.toast{
+  background:#333;
+  color:#fff;
+  padding:10px 14px;
+  border-radius:8px;
+  font-size:13px;
+  box-shadow:0 4px 14px rgba(0,0,0,.3);
+  animation:fadein .25s;
+}
+@keyframes fadein{
+  from{opacity:0;transform:translateY(6px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* Group quantity modal */
+.gqm-wrap{
+  background:#fff;
+  padding:24px 26px;
+  border-radius:18px;
+  max-width:480px;
+  width:100%;
+  box-shadow:0 12px 40px rgba(0,0,0,.45);
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  border:2px solid #ff5858;
+}
+.gqm-header{font-size:1.05rem;font-weight:600;color:#ff5858;margin:0;}
+.gqm-stats{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  font-size:12px;
+  background:#fff7f2;
+  border:1px solid #ffd9c5;
+  padding:10px 12px;
+  border-radius:10px;
+}
+.gqm-qtyctrl{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+}
+.gqm-qtyctrl button{
+  background:#ff5858;
+  color:#fff;
+  border:none;
+  width:46px;
+  height:46px;
+  font-size:24px;
+  font-weight:700;
+  cursor:pointer;
+  border-radius:14px;
+}
+.gqm-qtyctrl button:disabled{opacity:.35;cursor:not-allowed;}
+.gqm-qtyval{font-size:30px;font-weight:700;min-width:80px;text-align:center;color:#ff5858;}
+.gqm-reason input{
+  width:100%;
+  padding:8px 10px;
+  border:1px solid #ccc;
+  border-radius:8px;
+  font-size:13px;
+}
+.gqm-actions{display:flex;gap:12px;}
+.gqm-actions button{
+  flex:1;
+  padding:10px 14px;
+  border:none;
+  border-radius:10px;
+  font-weight:600;
+  cursor:pointer;
+}
+/* === Přidané: změna stolu === */
+.btn-change-table{
+  background:#17a2b8;
+  color:#fff;
+}
+.btn-change-table:hover{background:#138496;}
+.table-change-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:1500;
+}
+.table-change-wrap{
+  background:#fff;
+  width:95%;
+  max-width:560px;
+  max-height:90vh;
+  overflow:auto;
+  border-radius:18px;
+  box-shadow:0 16px 48px rgba(0,0,0,.45);
+  padding:26px 30px 34px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  position:relative;
+}
+.table-change-wrap h3{
+  margin:0 0 4px;
+  font-size:20px;
+  color:#ff5858;
+  text-align:center;
+}
+.table-change-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(90px,1fr));
+  gap:10px;
+  margin-top:8px;
+}
+.tc-btn{
+  border:2px solid #eee;
+  background:#fafafa;
+  border-radius:10px;
+  padding:12px 6px;
+  cursor:pointer;
+  font-weight:600;
+  font-size:13px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  line-height:1.1;
+  min-height:60px;
+  transition:.25s;
+}
+.tc-btn:hover{background:#fff;border-color:#ffb09a;}
+.tc-btn.current{background:#28a745;color:#fff;border-color:#28a745;}
+.tc-btn.occupied{background:#dc3545;color:#fff;border-color:#dc3545;}
+.tc-btn.selected{background:#17a2b8;color:#fff;border-color:#17a2b8;}
+.tc-actions{
+  display:flex;
+  gap:12px;
+  margin-top:14px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+.tc-actions button{
+  flex:1 1 180px;
+  padding:12px 14px;
+  border:none;
+  border-radius:10px;
+  font-weight:600;
+  cursor:pointer;
+  font-size:14px;
+}
+.tc-confirm{
+  background:#17a2b8;
+  color:#fff;
+}
+.tc-confirm:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+.tc-confirm:hover:enabled{background:#138496;}
+.tc-cancel{
+  background:#6c757d;
+  color:#fff;
+}
+.tc-cancel:hover{background:#545c63;}
+.tc-close{
+  position:absolute;
+  top:10px;
+  right:10px;
+  background:#ff5858;
+  color:#fff;
+  border:none;
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
+}
+.tc-close:hover{background:#f09819;}
+.tc-meta{
+  background:#fff8f6;
+  border:1px solid #ffd7c7;
+  padding:10px 12px;
+  border-radius:10px;
+  font-size:13px;
+  line-height:1.35;
+}
+
+.gqm-cancel{background:#6c757d;color:#fff;}
+.gqm-save{background:#28a745;color:#fff;}
+.gqm-cancel:hover{background:#555d63;}
+.gqm-save:hover{background:#218838;}
+.gqm-breakdown{
+  font-size:11px;
+  color:#555;
+  max-height:120px;
+  overflow:auto;
+  border:1px dashed #e8bfa9;
+  padding:6px 8px;
+  border-radius:8px;
+  background:#fffdfa;
+}
+
+@media(max-width:820px){
+  .items-table{min-width:700px;}
+  .pm-header h2{font-size:17px;}
+}
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>💰 Účtování</h1>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link" id="nav-obsluha">🏠 Objednávky</a>
+      <a href="kitchen.html" class="nav-link" id="nav-kuchyn">👨‍🍳 Kuchyň</a>
+      <a href="pasta-kuchyn.html" class="nav-link" id="nav-pasta">🍝 Pasta kuchyň</a>
+      <a href="bar.html" class="nav-link" id="nav-bar">🍺 Bar</a>
+      <a href="serving.html" class="nav-link" id="nav-servirovani">🍽️ Servírování</a>
+      <a href="billing.html" class="nav-link active" id="nav-uctovani">💰 Účtování</a>
+      <a href="historie.html" class="nav-link">📋 Historie</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="section-title">Aktuální obsazené stoly s objednávkami</div>
+    <div class="orders-grid" id="ordersContainer"></div>
+    <div class="last-update">Poslední aktualizace: <span id="lastUpdate">-</span></div>
+  </div>
+
+  <!-- Modaly -->
+  <div id="paymentModalBg" class="modal-bg"></div>
+  <div id="cancelModalBg" class="cancel-modal-bg"></div>
+  <div id="groupQtyModalBg" class="modal-bg"></div>
+  <div id="toastContainer" class="toast-container"></div>
+  <!-- Modal pro změnu stolu -->
+  <div id="tableChangeModal" class="table-change-modal">
+    <div class="table-change-wrap">
+      <button class="tc-close" onclick="closeTableChangeModal()">✖</button>
+      <h3>Přesun účtu na jiný stůl</h3>
+      <div class="tc-meta">
+        <div><strong>Aktuální stůl:</strong> <span id="tcCurrentTable">-</span></div>
+        <div><strong>Současná nezaplacená hodnota:</strong> <span id="tcCurrentOutstanding">-</span></div>
+      </div>
+      <div style="font-size:13px;color:#444;margin-top:4px;">
+        Vyber cílový stůl. Obsazené (s aktivní session) jsou červené. Aktuální je zeleně.
+      </div>
+      <div id="tcGrid" class="table-change-grid"></div>
+      <div class="tc-actions">
+        <button class="tc-cancel" onclick="closeTableChangeModal()">Zpět</button>
+        <button id="tcConfirmBtn" class="tc-confirm" disabled onclick="confirmTableChange()">Přesunout</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ================== KONSTANTY & STAV ================== */
+const API='api/restaurant-api.php';
+let tables=[];
+
+/* ===== Caching nedoručených položek po zaplacení (workaround) =====
+   awaitingCache[table_number] = {
+     table_code: 'P12',
+     lastSeen: <timestamp>,
+     items: [{ name, qty, statuses:{status:qty} }]
+   }
+*/
+const awaitingCache = {};
+const CACHE_TTL_MS = 45 * 60 * 1000; // 45 minut
+
+const WAITING_STATUSES = new Set([
+  'waiting','preparing','ready','ready_for_pickup','to_deliver',
+  'paid','in_progress','cook','bar','queued'
+]);
+const FINAL_DONE_STATUSES = new Set(['delivered','cancelled','canceled','storno']);
+
+/* === Stav pro změnu stolu === */
+let tableChangeState = {
+  currentTable: null,
+  currentOutstanding: 0,
+  selectedTarget: null,
+  allTables: []
+};
+
+/* ================== UTIL FUNKCE ================== */
+function formatCZK(v){return new Intl.NumberFormat('cs-CZ',{style:'currency',currency:'CZK',minimumFractionDigits:0}).format(v||0);}
+function showToast(msg,color){
+  const box=document.getElementById('toastContainer');
+  const div=document.createElement('div');
+  div.className='toast';
+  div.textContent=msg;
+  if(color) div.style.background=color;
+  box.appendChild(div);
+  setTimeout(()=>{div.style.opacity=0;setTimeout(()=>div.remove(),400)},3400);
+}
+function getItemValue(item,...keys){
+  for(const k of keys){
+    if(item && Object.prototype.hasOwnProperty.call(item,k) && item[k]!=null) return item[k];
+  }
+  return null;
+}
+function statusInfo(status){
+  if(!status) return {text:'',cls:''};
+  switch(status){
+    case 'delivered': return {text:'Doručeno',cls:'status-delivered'};
+    case 'paid': return {text:'Zaplaceno',cls:'status-paid'};
+    case 'cancelled':
+    case 'canceled':
+    case 'storno': return {text:'Zrušeno',cls:'status-cancelled'};
+    case 'preparing': return {text:'Připravuje se',cls:'status-preparing'};
+    case 'ready':
+    case 'ready_for_pickup':
+    case 'to_deliver': return {text:'Připraveno',cls:'status-ready'};
+    default: return {text:'Čeká',cls:'status-waiting'};
+  }
+}
+function isUndeliveredStatus(st){
+  if(!st) return false;
+  st=st.toLowerCase();
+  if(FINAL_DONE_STATUSES.has(st)) return false;
+  return WAITING_STATUSES.has(st);
+}
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function pickQuantity(item){return Number(getItemValue(item,'qty_total','quantity','qty','order_qty','original_qty')||0);}
+function pickPaid(item){return Number(getItemValue(item,'qty_paid','paid_quantity','paid')||0);}
+
+/* ================== NAČTENÍ TABULEK ================== */
+async function loadTables(){
+  try{
+    const r = await fetch(`${API}?action=tables`);
+    const raw = await r.json();
+    const sourceArr = (raw && raw.data && Array.isArray(raw.data.tables))
+      ? raw.data.tables : (Array.isArray(raw.data)?raw.data:[]);
+
+    const now=Date.now();
+    const result=[];
+
+    for(const table of sourceArr){
+      const billR=await fetch(`${API}?action=get-bill&table=${encodeURIComponent(table.table_number)}`);
+      let bill=null;
+      try{bill=await billR.json();}catch(e){continue;}
+      if(!bill||!bill.success||!bill.data) continue;
+
+      const items = Array.isArray(bill.data.items)?bill.data.items:[];
+
+      const enriched=items.map(it=>{
+        const quantity=pickQuantity(it);
+        const paid=pickPaid(it);
+        let out=Number(getItemValue(it,'qty_outstanding','outstanding_qty','outstanding_quantity'));
+        if(isNaN(out) || out==null){ out=Math.max(0, quantity-paid); }
+        return {
+          ...it,
+          __quantity:quantity,
+          __paid:paid,
+          __outstanding:out,
+          __status:(it.status||it.state||'').toLowerCase()
+        };
+      });
+
+      const anyOutstanding = enriched.some(e=>e.__outstanding>0);
+      const hasUndeliveredPaid = enriched.some(e=>{
+        if(e.__paid < e.__quantity || e.__quantity===0) return false;
+        return isUndeliveredStatus(e.__status);
+      });
+      const allDeliveredOrCancelled = enriched.length>0 &&
+        enriched.every(e=>FINAL_DONE_STATUSES.has(e.__status));
+
+      // Cache update
+      if(hasUndeliveredPaid){
+        const waitingLines = enriched.filter(e=> e.__paid>=e.__quantity && isUndeliveredStatus(e.__status));
+        if(waitingLines.length){
+          awaitingCache[table.table_number] = {
+            table_code: table.table_code || ('Stůl '+table.table_number),
+            lastSeen: now,
+            items: waitingLines.map(w=>({
+              name: getItemValue(w,'item_name','name')||'Položka',
+              qty: w.__quantity,
+              status: w.__status,
+              statuses: { [w.__status]: w.__quantity }
+            }))
+          };
+        }
+      } else if(allDeliveredOrCancelled && awaitingCache[table.table_number]) {
+        delete awaitingCache[table.table_number];
+      }
+
+      let cacheHasUndelivered=false;
+      if(!items.length && awaitingCache[table.table_number]){
+        const age = now - awaitingCache[table.table_number].lastSeen;
+        if(age < CACHE_TTL_MS) cacheHasUndelivered=true;
+        else delete awaitingCache[table.table_number];
+      }
+
+      const shouldDisplay = anyOutstanding || hasUndeliveredPaid || cacheHasUndelivered;
+      if(!shouldDisplay) continue;
+
+      const outstandingAmount=enriched.reduce((sum,it)=>{
+        if(it.__outstanding>0){
+          const price = Number(getItemValue(it,'unit_price','price')||0);
+          sum += it.__outstanding*price;
+        }
+        return sum;
+      },0);
+
+      result.push({
+        table_number: table.table_number,
+        table_code: table.table_code || ('Stůl '+table.table_number),
+        allRawItems: enriched,
+        outstandingAmount,
+        fullyPaid: !anyOutstanding,
+        awaitingDelivery: hasUndeliveredPaid || cacheHasUndelivered,
+        allDelivered: allDeliveredOrCancelled,
+        cacheOnly: (!items.length && cacheHasUndelivered)
+      });
+    }
+
+    // Přidat stoly pouze z cache
+    const seen=new Set(result.map(t=>String(t.table_number)));
+    const now2=Date.now();
+    for(const [tn,cached] of Object.entries(awaitingCache)){
+      if(seen.has(tn)) continue;
+      const age=now2 - cached.lastSeen;
+      if(age > CACHE_TTL_MS){
+        delete awaitingCache[tn];
+        continue;
+      }
+      result.push({
+        table_number:Number(tn),
+        table_code:cached.table_code||('Stůl '+tn),
+        allRawItems:[],
+        outstandingAmount:0,
+        fullyPaid:true,
+        awaitingDelivery:true,
+        allDelivered:false,
+        cacheOnly:true
+      });
+    }
+
+    tables=result;
+    renderTables();
+    updateLastUpdateTime();
+  }catch(e){
+    console.error(e);
+    showToast('Chyba načítání: '+e.message,'#c53030');
+  }
+}
+
+/* ================== GROUPING ================== */
+function groupForCardDetailed(rawItems){
+  const map={};
+  rawItems.forEach(it=>{
+    const name=getItemValue(it,'item_name','name')||'Položka';
+    const unit=Number(getItemValue(it,'unit_price','price')||0);
+    const note=getItemValue(it,'note','note')||'';
+    const status=(getItemValue(it,'status','state')||'').toLowerCase();
+    const key=`${name}|${unit}|${note}`;
+    if(!map[key]){
+      map[key]={key,name,note,unit_price:unit,total_quantity:0,total_paid:0,qty_outstanding:0,statuses:{},itemRefs:[]};
+    }
+    map[key].total_quantity+=it.__quantity;
+    map[key].total_paid+=it.__paid;
+    map[key].qty_outstanding+=it.__outstanding;
+    map[key].statuses[status]=(map[key].statuses[status]||0)+it.__quantity;
+    map[key].itemRefs.push({
+      id:it.id,
+      quantity:it.__quantity,
+      paid_quantity:it.__paid,
+      outstanding:it.__outstanding,
+      status
+    });
+  });
+  return Object.values(map);
+}
+
+/* ================== VYKRESLENÍ KARET ================== */
+function renderTables(){
+  const c=document.getElementById('ordersContainer');
+  if(!tables.length){
+    c.innerHTML='<div class="empty-state">Žádné aktivní účty</div>';
+    return;
+  }
+  c.innerHTML = tables.map(t=>{
+    const allGroups=groupForCardDetailed(t.allRawItems);
+    const outstandingGroups=allGroups.filter(g=>g.qty_outstanding>0);
+    const fullyPaidGroups=allGroups.filter(g=>g.qty_outstanding===0);
+    const awaitingGroups=fullyPaidGroups.filter(g=>Object.keys(g.statuses).some(st=>isUndeliveredStatus(st)));
+
+    const waitingBadge = t.awaitingDelivery ? '<span class="badge-awaiting">ČEKÁ NA VYDÁNÍ</span>' : '';
+
+    let outstandingHtml='';
+    if(outstandingGroups.length){
+      outstandingHtml=`
+        <div style="font-size:11px;font-weight:600;color:#444;margin:4px 0 2px;">Nezaplacené / k úhradě</div>
+        <ul class="bill-list">
+          ${outstandingGroups.map(g=>renderGroupLine(g,false,t.table_number)).join('')}
+        </ul>`;
+    }
+
+    let awaitingHtml='';
+    if(awaitingGroups.length){
+      awaitingHtml=`
+        <div style="font-size:11px;font-weight:600;color:#e65100;margin:8px 0 2px;">Čeká na vydání (již zaplaceno)</div>
+        <div>${awaitingGroups.map(g=>renderAwaitingGroup(g)).join('')}</div>`;
+    } else if(t.cacheOnly && awaitingCache[t.table_number]){
+      const cacheItems=awaitingCache[t.table_number].items;
+      awaitingHtml=`
+        <div style="font-size:11px;font-weight:600;color:#e65100;margin:8px 0 2px;">Čeká na vydání (cache)</div>
+        <div>
+          ${cacheItems.map(ci=>`
+            <div class="awaiting-item-row">
+              <span class="name">${escapeHtml(ci.name)}</span>
+              <span>${ci.qty} ks</span>
+              <span>${
+                Object.entries(ci.statuses).map(([st,qt])=>{
+                  const inf=statusInfo(st);
+                  return `<span class="status-badge ${inf.cls}">${inf.text} ${qt}</span>`;
+                }).join(' ')
+              }</span>
+            </div>
+          `).join('')}
+        </div>`;
+    }
+
+    let itemsHtml;
+    if(!outstandingGroups.length && !awaitingHtml){
+      itemsHtml='<div style="color:#28a745;font-style:italic;">Žádné aktivní položky</div>';
+    }else{
+      itemsHtml=(outstandingHtml||'')+(awaitingHtml||'');
+    }
+
+    const cardClass = t.awaitingDelivery ? 'order-card awaiting-delivery'
+                      : (t.fullyPaid ? 'order-card fully-paid' : 'order-card');
+
+    const footerButtons = (()=>{
+      if(t.awaitingDelivery){
+        return `<div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-reprint" onclick="billPay.reprintLast(${t.table_number})">🖨️ Reprint</button>
+          <button class="btn" style="background:#607d8b" onclick="markAllDelivered(${t.table_number})">✅ Vydáno</button>
+          <button class="btn btn-change-table" onclick="openTableChangeModal(${t.table_number})">♻️ Přesunout stůl</button>
+        </div>`;
+      }
+      if(t.fullyPaid){
+        return `<div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-reprint" onclick="billPay.reprintLast(${t.table_number})">🖨️ Reprint</button>
+          <button class="btn btn-change-table" onclick="openTableChangeModal(${t.table_number})">♻️ Přesunout stůl</button>
+        </div>`;
+      }
+      return `<div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn" onclick="billPay.open(${t.table_number})">💰 Platba</button>
+        <button class="btn btn-change-table" onclick="openTableChangeModal(${t.table_number})">♻️ Přesunout stůl</button>
+      </div>`;
+    })();
+
+    return `<div class="${cardClass}">
+      <div class="order-header">
+        <div class="table-number">🍽️ ${t.table_code}
+          ${t.fullyPaid && !t.awaitingDelivery ? '<span class="paid-badge">Uhrazeno</span>':''}
+          ${waitingBadge}
+        </div>
+        <div>${t.fullyPaid && !t.awaitingDelivery ? '' : (!t.fullyPaid ? formatCZK(t.outstandingAmount) : '')}</div>
+      </div>
+      ${itemsHtml}
+      ${footerButtons}
+    </div>`;
+  }).join('');
+}
+
+function renderGroupLine(g,isAwaiting,tableNumber){
+  const statusChips=Object.entries(g.statuses).map(([st,qt])=>{
+    const inf=statusInfo(st);
+    return `<span class="status-badge ${inf.cls}" title="${inf.text}">${inf.text} ${qt}</span>`;
+  }).join(' ');
+  const isFullyPaid=g.qty_outstanding===0;
+  return `<li class="bill-item ${isFullyPaid?'fully-paid-item':''}">
+    <div class="bill-left">
+      <span class="bill-name">${escapeHtml(g.name)}</span>
+      <span class="bill-qty">${
+        isFullyPaid
+          ? `(${g.total_quantity} × ${formatCZK(g.unit_price)})`
+          : `(Zbývá: ${g.qty_outstanding} × ${formatCZK(g.unit_price)})`
+      }</span>
+      ${g.note?`<span class="bill-note" title="${escapeHtml(g.note)}">${escapeHtml(g.note)}</span>`:''}
+      <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">${statusChips}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+      <div style="font-weight:600;">${
+        isFullyPaid?formatCZK(g.total_quantity*g.unit_price):formatCZK(g.qty_outstanding*g.unit_price)
+      }</div>
+      <button class="edit-btn" onclick="openGroupAdjust('${btoa(encodeURIComponent(g.key))}',${tableNumber})">✏️</button>
+    </div>
+  </li>`;
+}
+
+function renderAwaitingGroup(g){
+  const pendingStatuses = Object.entries(g.statuses)
+    .filter(([st])=>isUndeliveredStatus(st))
+    .map(([st,qt])=>{
+      const inf=statusInfo(st);
+      return `<span class="status-badge ${inf.cls}" title="${inf.text}">${inf.text} ${qt}</span>`;
+    }).join(' ');
+  return `<div class="awaiting-item-row">
+    <span class="name">${escapeHtml(g.name)}</span>
+    <span>${g.total_quantity} ks</span>
+    <span>${pendingStatuses||''}</span>
+  </div>`;
+}
+
+/* ================== MARK ALL DELIVERED ================== */
+async function markAllDelivered(tableNumber){
+  try{
+    const t=tables.find(x=>x.table_number===tableNumber);
+    if(!t){
+      delete awaitingCache[tableNumber];
+      return;
+    }
+    const pendingIds = t.allRawItems
+      .filter(i=>{
+        const st=(i.status||i.__status||'').toLowerCase();
+        return !FINAL_DONE_STATUSES.has(st);
+      })
+      .map(i=>i.id)
+      .filter(Boolean);
+    if(!pendingIds.length){
+      delete awaitingCache[tableNumber];
+      showToast('Žádné čekající položky','');
+      loadTables();
+      return;
+    }
+    const resp=await fetch(`${API}?action=mark-delivered-bulk`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({table:tableNumber,item_ids:pendingIds})
+    });
+    const j=await resp.json();
+    if(!j.success) throw new Error(j.error||j.message||'Chyba potvrzení');
+    delete awaitingCache[tableNumber];
+    showToast('Položky označeny jako vydané','#157347');
+    loadTables();
+  }catch(e){
+    showToast('Chyba: '+e.message,'#c53030');
+  }
+}
+window.markAllDelivered=markAllDelivered;
+
+/* ================== ZMĚNA STOLU ================== */
+async function openTableChangeModal(tableNumber){
+  const tableObj=tables.find(t=>t.table_number===tableNumber);
+  if(!tableObj){showToast('Stůl nenalezen','#c53030');return;}
+  tableChangeState.currentTable=tableNumber;
+  tableChangeState.selectedTarget=null;
+  tableChangeState.currentOutstanding=tableObj.allRawItems
+    .filter(i=>i.__outstanding>0)
+    .reduce((s,i)=>s+i.__outstanding*Number(getItemValue(i,'unit_price','price')||0),0);
+  document.getElementById('tcCurrentTable').textContent=tableObj.table_code;
+  document.getElementById('tcCurrentOutstanding').textContent=formatCZK(tableChangeState.currentOutstanding);
+  await loadTablesForChange();
+  document.getElementById('tableChangeModal').style.display='flex';
+  document.getElementById('tcConfirmBtn').disabled=true;
+}
+function closeTableChangeModal(){
+  document.getElementById('tableChangeModal').style.display='none';
+  tableChangeState={currentTable:null,currentOutstanding:0,selectedTarget:null,allTables:[]};
+}
+async function loadTablesForChange(){
+  try{
+    const r=await fetch(`${API}?action=tables`);
+    const j=await r.json();
+    tableChangeState.allTables=(j&&j.data&&Array.isArray(j.data.tables))?j.data.tables:[];
+    renderTableChangeGrid();
+  }catch(e){
+    showToast('Chyba načtení stolů','#c53030');
+  }
+}
+function renderTableChangeGrid(){
+  const grid=document.getElementById('tcGrid');
+  if(!grid)return;
+  grid.innerHTML=tableChangeState.allTables.map(t=>{
+    const current=t.table_number===tableChangeState.currentTable;
+    const occupied=t.status==='occupied' && !current;
+    const selected=t.table_number===tableChangeState.selectedTarget;
+    let cls='tc-btn';
+    if(current) cls+=' current';
+    else if(occupied) cls+=' occupied';
+    if(selected) cls+=' selected';
+    const label=t.table_code||('Stůl '+t.table_number);
+    return `<button class="${cls}" onclick="selectNewTableChange(${t.table_number})" ${current?'disabled':''}>${label}</button>`;
+  }).join('') || '<div style="grid-column:1/-1;font-size:13px;color:#666;">Žádné stoly</div>';
+}
+function selectNewTableChange(tableNumber){
+  if(tableNumber===tableChangeState.currentTable)return;
+  tableChangeState.selectedTarget=tableNumber;
+  renderTableChangeGrid();
+  document.getElementById('tcConfirmBtn').disabled=!tableChangeState.selectedTarget;
+}
+async function confirmTableChange(){
+  const from=tableChangeState.currentTable;
+  const to=tableChangeState.selectedTarget;
+  if(!from||!to) return;
+  const btn=document.getElementById('tcConfirmBtn');
+  btn.disabled=true; btn.textContent='Přesouvám...';
+  try{
+    const res=await fetch(`${API}?action=change-table`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({from_table:from,to_table:to})
+    });
+    const j=await res.json();
+    if(!j.success) throw new Error(j.error||j.message||'Přesun selhal');
+    showToast('Účet přesunut','#157347');
+    closeTableChangeModal();
+    await loadTables();
+  }catch(e){
+    showToast('Chyba přesunu: '+e.message,'#c53030');
+    btn.disabled=false; btn.textContent='Přesunout';
+  }
+}
+
+/* ================== MODAL ÚPRAVY MNOŽSTVÍ ================== */
+let groupAdjustState={tableNumber:null,groupKey:null,decodedKey:null,targetQty:0,minQty:0,originalQty:0,totalPaid:0,unitPrice:0,name:'',note:'',itemRefs:[]};
+
+function openGroupAdjust(encodedKey,tableNumber){
+  const table=tables.find(t=>t.table_number===tableNumber);
+  if(!table){showToast('Stůl nenalezen','#c53030');return;}
+  const groups=groupForCardDetailed(table.allRawItems);
+  const decodedKey=decodeURIComponent(atob(encodedKey));
+  const group=groups.find(g=>g.key===decodedKey);
+  if(!group){showToast('Skupina nenalezena','#c53030');return;}
+  groupAdjustState={
+    tableNumber,groupKey:encodedKey,decodedKey,
+    targetQty:group.total_quantity,originalQty:group.total_quantity,
+    minQty:group.total_paid,totalPaid:group.total_paid,
+    unitPrice:group.unit_price,name:group.name,note:group.note,
+    itemRefs:[...group.itemRefs].sort((a,b)=>a.id-b.id)
+  };
+  renderGroupQtyModal();
+}
+function renderGroupQtyModal(){
+  const bg=document.getElementById('groupQtyModalBg');
+  const s=groupAdjustState;
+  const breakdown=s.itemRefs.map(r=>{
+    const free=r.quantity-r.paid_quantity;
+    return `#${r.id} | qty ${r.quantity} (paid ${r.paid_quantity}, free ${free})`;
+  }).join('\n');
+  const minAllowed=(s.minQty===0)?0:Math.max(s.minQty,1);
+  const canDelete=(s.minQty===0);
+  bg.innerHTML=`<div class="gqm-wrap">
+    <h3 class="gqm-header">Upravit množství – ${escapeHtml(s.name)}</h3>
+    <div class="gqm-stats">
+      <div><strong>Původní množství:</strong> ${s.originalQty} ks</div>
+      <div><strong>Zaplaceno:</strong> ${s.totalPaid} ks</div>
+      <div><strong>Minimum:</strong> ${s.minQty} ks ${canDelete?'(můžete smazat - 0)':''}</div>
+      <div><strong>Jednotková cena:</strong> ${formatCZK(s.unitPrice)}</div>
+      ${s.note?`<div><em>Poznámka:</em> ${escapeHtml(s.note)}</div>`:''}
+    </div>
+    <div class="gqm-qtyctrl">
+      <button onclick="changeGroupQty(-1)" ${s.targetQty<=minAllowed?'disabled':''}>−</button>
+      <div class="gqm-qtyval" id="gqmQtyVal">${s.targetQty}</div>
+      <button onclick="changeGroupQty(1)">+</button>
+    </div>
+    <div style="font-size:12px;text-align:center;">Nová celková hodnota: <strong id="gqmAmountVal">${formatCZK(s.targetQty*s.unitPrice)}</strong></div>
+    <div class="gqm-reason">
+      <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Důvod (volitelné)</label>
+      <input type="text" id="gqmReason" placeholder="překlep / přidání / snížení ...">
+    </div>
+    <div style="font-size:11px;color:#666;">Rozpad položek (odebírá se od konce):</div>
+    <div class="gqm-breakdown">${escapeHtml(breakdown).replace(/\n/g,'<br>')}</div>
+    <div class="gqm-actions">
+      <button class="gqm-cancel" onclick="closeGroupQtyModal()">Zpět</button>
+      <button class="gqm-save" id="gqmSaveBtn" onclick="saveGroupQty()">Uložit</button>
+    </div>
+  </div>`;
+  bg.style.display='flex';
+}
+function changeGroupQty(delta){
+  const s=groupAdjustState;
+  const minAllowed=(s.minQty===0)?0:Math.max(s.minQty,1);
+  const newVal=s.targetQty+delta;
+  if(newVal<minAllowed||newVal>999)return;
+  s.targetQty=newVal;
+  document.getElementById('gqmQtyVal').textContent=s.targetQty;
+  document.getElementById('gqmAmountVal').textContent=formatCZK(s.targetQty*s.unitPrice);
+  const minusBtn=document.querySelector('#groupQtyModalBg .gqm-qtyctrl button');
+  if(minusBtn) minusBtn.disabled=(s.targetQty<=minAllowed);
+}
+function closeGroupQtyModal(){
+  const bg=document.getElementById('groupQtyModalBg');
+  bg.style.display='none'; bg.innerHTML='';
+  groupAdjustState={tableNumber:null,groupKey:null,decodedKey:null,targetQty:0,minQty:0,originalQty:0,totalPaid:0,unitPrice:0,name:'',note:'',itemRefs:[]};
+}
+async function saveGroupQty(){
+  const btn=document.getElementById('gqmSaveBtn');
+  if(!btn)return;
+  btn.disabled=true;
+  const reason=document.getElementById('gqmReason').value.trim();
+  const employeeName=localStorage.getItem('employee_name')||'';
+  const s=groupAdjustState;
+  const diff=s.targetQty-s.originalQty;
+  if(diff===0){closeGroupQtyModal();btn.disabled=false;return;}
+  try{
+    if(diff>0){
+      const lastRef=[...s.itemRefs].sort((a,b)=>b.id-a.id)[0];
+      const newQty=lastRef.quantity+diff;
+      await adjustSingleItem(lastRef.id,newQty,reason,employeeName);
+    }else{
+      let toRemove=-diff;
+      const refsDesc=[...s.itemRefs].sort((a,b)=>b.id-a.id);
+      for(const ref of refsDesc){
+        if(toRemove<=0) break;
+        const removable=ref.quantity-ref.paid_quantity;
+        if(removable<=0) continue;
+        const take=Math.min(removable,toRemove);
+        const newQty=ref.quantity-take;
+        await adjustSingleItem(ref.id,newQty,reason,employeeName);
+        toRemove-=take;
+      }
+      if(toRemove>0) throw new Error('Nelze snížit pod zaplacené kusy.');
+    }
+    showToast('Množství upraveno','#157347');
+    closeGroupQtyModal();
+    await loadTables();
+  }catch(e){
+    showToast('Chyba úpravy: '+e.message,'#c53030');
+    btn.disabled=false;
+  }
+}
+async function adjustSingleItem(order_item_id,new_quantity,reason='',employee_name=''){
+  if(!employee_name){try{employee_name=localStorage.getItem('employee_name')||'';}catch(e){}}
+  const payload={order_item_id,new_quantity,reason,employee_name};
+  let resp;
+  try{
+    resp=await fetch(`${API}?action=adjust-order-item-quantity`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+  }catch(e){throw new Error('Síťová chyba: '+e.message);}
+  const text=await resp.text();
+  let data;
+  try{data=text?JSON.parse(text):{};}catch(e){throw new Error('Neplatná odpověď serveru');}
+  if(!resp.ok||!data.success) throw new Error(data.error||data.message||('HTTP '+resp.status));
+  await loadTables();
+  return data;
+}
+
+/* ================== BILL PAY LOGIKA ================== */
+const billPay={
+  st:{table:null,tableData:null,aggregated:[],mode:'full',lastReceipt:null},
+  open(tableNumber){
+    const t=tables.find(x=>x.table_number===tableNumber);
+    if(!t){showToast('Stůl nenalezen','#c53030');return;}
+    this.resetState();
+    this.st.table=tableNumber;
+    this.st.tableData=t;
+    const prs=t.prior_receipts||[];
+    if(prs.length){
+      const last=prs[prs.length-1];
+      this.st.lastReceipt=getItemValue(last,'receipt_number','id')||null;
+    }
+    const rawOutstanding=t.allRawItems.filter(i=>i.__outstanding>0);
+    this.st.aggregated=this.aggregateItems(rawOutstanding);
+    this.renderModal();
+    this.applyMode('full');
+    this.prefillEmployee();
+    document.getElementById('paymentModalBg').style.display='flex';
+  },
+  close(){
+    document.getElementById('paymentModalBg').style.display='none';
+    document.getElementById('paymentModalBg').innerHTML='';
+    this.resetState();
+  },
+  resetState(){this.st={table:null,tableData:null,aggregated:[],mode:'full',lastReceipt:null};},
+  aggregateItems(items){
+    const map={};
+    items.forEach(it=>{
+      const out=Number(it.__outstanding||0);
+      if(out<=0)return;
+      const name=getItemValue(it,'item_name','name')||'';
+      const unit=Number(getItemValue(it,'unit_price','price')||0);
+      const note=getItemValue(it,'note','note')||'';
+      const id=getItemValue(it,'id','order_item_id');
+      const status=getItemValue(it,'status','state')||'';
+      const key=`${name}|${unit}|${note}`;
+      if(!map[key]) map[key]={key,name,note,unit_price:unit,qty_outstanding:0,pay_qty:0,itemRefs:[],statuses:{}};
+      map[key].qty_outstanding+=out;
+      map[key].itemRefs.push({id,outstanding:out,unit_price:unit,status});
+      map[key].statuses[status]=(map[key].statuses[status]||0)+out;
+    });
+    return Object.values(map);
+  },
+  renderModal(){
+    const wrap=document.getElementById('paymentModalBg');
+    wrap.innerHTML=`<div class="pay-modal">
+      <div class="pm-header">
+        <h2>Platba – ${this.st.tableData.table_code}</h2>
+        <button class="pm-close" onclick="billPay.close()">✖</button>
+      </div>
+      <div class="pm-body">
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="mode-full" onclick="billPay.applyMode('full')">Plná platba</button>
+          <button class="mode-btn" id="mode-partial" onclick="billPay.applyMode('partial')">Částečná platba</button>
+        </div>
+        <div class="employee-box">
+          <label>Obsluha:
+            <input type="text" id="pmEmployee" placeholder="Jméno obsluhy">
+          </label>
+          <div class="method-group" id="methodGroup">
+            <label class="active" data-m="cash">
+              <input type="radio" name="payMethod" value="cash" checked style="display:none;">Hotovost
+            </label>
+            <label data-m="card">
+              <input type="radio" name="payMethod" value="card" style="display:none;">Karta
+            </label>
+          </div>
+        </div>
+        <div class="summary">
+          <button class="btn select-all-btn" id="selectAllBtn" onclick="billPay.toggleSelectAll()">Vybrat vše</button>
+          <span id="sumOutstanding"></span>
+          <span id="sumSelected"></span>
+        </div>
+        <div class="items-wrap">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="min-width:240px;">Položka / Statusy</th>
+                <th>Cena/ks</th>
+                <th>Zbývá</th>
+                <th>Platba (ks)</th>
+                <th>Částka</th>
+                <th>Storno</th>
+              </tr>
+            </thead>
+            <tbody id="payRows">
+              ${this.st.aggregated.map(g=>this.rowHTML(g)).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="pm-footer">
+        <div class="total-box" id="selectionBox">Vybráno: 0 Kč</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn" onclick="billPay.close()">Zavřít</button>
+          <button class="btn action-primary pay-btn" id="payBtn" disabled onclick="billPay.submit()">Zaplatit</button>
+        </div>
+      </div>
+    </div>`;
+    document.querySelectorAll('#methodGroup label').forEach(l=>{
+      l.onclick=()=>{
+        document.querySelectorAll('#methodGroup label').forEach(x=>x.classList.remove('active'));
+        l.classList.add('active');
+        l.querySelector('input').checked=true;
+      };
+    });
+    this.updateTotals();
+  },
+  rowHTML(g){
+    const k=this.safeKey(g.key);
+    const statusChips=Object.entries(g.statuses).map(([st,qt])=>{
+      const inf=statusInfo(st);
+      return `<span class="status-badge ${inf.cls}" title="${inf.text}">${inf.text} ${qt}</span>`;
+    }).join(' ');
+    return `<tr data-key="${g.key}">
+      <td>${g.name}${g.note?`<span class="item-note" title="${g.note}">${g.note}</span>`:''}
+        <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">${statusChips}</div>
+      </td>
+      <td>${formatCZK(g.unit_price)}</td>
+      <td id="out-${k}">${g.qty_outstanding}</td>
+      <td>
+        <div class="qty-ctrls">
+          <button id="minus-${k}" onclick="billPay.changeQty('${g.key}',-1)">−</button>
+          <span id="qty-${k}" style="min-width:26px;text-align:center;font-weight:600;">${g.pay_qty}</span>
+          <button id="plus-${k}" onclick="billPay.changeQty('${g.key}',1)">+</button>
+        </div>
+      </td>
+      <td class="amount-cell" id="amt-${k}">${formatCZK(0)}</td>
+      <td><button class="cancel-row-btn" onclick="billPay.openCancel('${g.key}')">✖</button></td>
+    </tr>`;
+  },
+  safeKey(key){return btoa(encodeURIComponent(key)).replace(/=+$/,'');},
+  applyMode(mode){
+    this.st.mode=mode;
+    document.getElementById('mode-full').classList.toggle('active',mode==='full');
+    document.getElementById('mode-partial').classList.toggle('active',mode==='partial');
+    this.st.aggregated.forEach(g=>{g.pay_qty=(mode==='full')?g.qty_outstanding:0;});
+    this.st.aggregated.forEach(g=>{
+      const k=this.safeKey(g.key);
+      ['minus-','plus-'].forEach(pre=>{
+        const el=document.getElementById(pre+k);
+        if(el) el.disabled=(mode==='full');
+      });
+      document.getElementById('qty-'+k).textContent=g.pay_qty;
+      document.getElementById('amt-'+k).textContent=formatCZK(g.pay_qty*g.unit_price);
+    });
+    if(mode==='partial') document.getElementById('selectAllBtn').textContent='Vybrat vše';
+    this.updateTotals();
+  },
+  changeQty(key,delta){
+    const g=this.st.aggregated.find(x=>x.key===key); if(!g)return;
+    g.pay_qty=Math.max(0,Math.min(g.qty_outstanding,g.pay_qty+delta));
+    const k=this.safeKey(g.key);
+    document.getElementById('qty-'+k).textContent=g.pay_qty;
+    document.getElementById('amt-'+k).textContent=formatCZK(g.pay_qty*g.unit_price);
+    this.updateTotals();
+  },
+  toggleSelectAll(){
+    if(this.st.mode==='full') return;
+    const allSelected=this.st.aggregated.every(g=>g.pay_qty===g.qty_outstanding);
+    this.st.aggregated.forEach(g=>g.pay_qty=allSelected?0:g.qty_outstanding);
+    this.st.aggregated.forEach(g=>{
+      const k=this.safeKey(g.key);
+      document.getElementById('qty-'+k).textContent=g.pay_qty;
+      document.getElementById('amt-'+k).textContent=formatCZK(g.pay_qty*g.unit_price);
+    });
+    document.getElementById('selectAllBtn').textContent=allSelected?'Vybrat vše':'Zrušit výběr';
+    this.updateTotals();
+  },
+  updateTotals(){
+    let outstanding=0,selected=0,fullPossible=true;
+    this.st.aggregated.forEach(g=>{
+      outstanding+=g.qty_outstanding*g.unit_price;
+      selected+=g.pay_qty*g.unit_price;
+      if(g.pay_qty!==g.qty_outstanding) fullPossible=false;
+    });
+    document.getElementById('sumOutstanding').textContent='Zbývá: '+formatCZK(outstanding);
+    document.getElementById('sumSelected').textContent='Vybráno: '+formatCZK(selected);
+    document.getElementById('selectionBox').textContent='Vybráno: '+formatCZK(selected);
+    const btn=document.getElementById('payBtn');
+    if(!btn)return;
+    if(selected<=0){btn.disabled=true;btn.textContent='Zaplatit';}
+    else{
+      btn.disabled=false;
+      btn.textContent=(fullPossible?'Zaplatit vše ':'Zaplatit ')+'('+formatCZK(selected)+')';
+    }
+  },
+  prefillEmployee(){
+    const inp=document.getElementById('pmEmployee');
+    if(!inp)return;
+    const stored=localStorage.getItem('employee_name');
+    if(stored) inp.value=stored;
+    inp.addEventListener('blur',()=>{
+      const v=inp.value.trim();
+      if(v) localStorage.setItem('employee_name',v);
+    });
+  },
+  submitting:false,
+  async submit(){
+    if(this.submitting) return;
+
+    const emp=(document.getElementById('pmEmployee')?.value||'').trim();
+    if(!emp){showToast('Zadej jméno obsluhy','#c05621');return;}
+    localStorage.setItem('employee_name',emp);
+
+    const full=this.st.aggregated.every(g=>g.pay_qty===g.qty_outstanding);
+    let items=[];
+    if(!full){
+      const perId={};
+      this.st.aggregated.forEach(g=>{
+        let need=g.pay_qty;
+        for(const ref of g.itemRefs){
+          if(need<=0) break;
+            const take=Math.min(ref.outstanding,need);
+            if(take>0){
+              perId[ref.id]=(perId[ref.id]||0)+take;
+              need-=take;
+            }
+        }
+      });
+      items=Object.entries(perId).map(([id,pay_qty])=>({src:'order_item',item_id:Number(id),pay_qty}));
+      if(items.length===0){
+        showToast('Žádné položky vybrané k platbě','#c05621');
+        return;
+      }
+    }
+
+    const method=(document.querySelector('input[name="payMethod"]:checked')||{}).value || 'cash';
+    const payload={
+      table:this.st.table,
+      table_number:this.st.table,
+      table_code:this.st.tableData.table_code,
+      payment_method:method,
+      employee_name:emp,
+      print:true,
+      items: full?[]:items
+    };
+
+    const btn=document.getElementById('payBtn');
+    btn.disabled=true;
+    btn.textContent='Zpracovávám...';
+    this.submitting=true;
+
+    // Cache čekajících položek pro full platbu
+    if(full){
+      const tData=this.st.tableData;
+      if(tData && Array.isArray(tData.allRawItems)){
+        const rawWaiting=tData.allRawItems.filter(item=>{
+          const st=(item.status||item.__status||'').toLowerCase();
+          return isUndeliveredStatus(st);
+        });
+        if(rawWaiting.length){
+          const grouped={};
+            rawWaiting.forEach(w=>{
+              const name=getItemValue(w,'item_name','name')||'Položka';
+              const st=(w.status||w.__status||'').toLowerCase();
+              const qtyTotal=(w.__quantity!=null)?w.__quantity:pickQuantity(w);
+              if(!grouped[name]) grouped[name]={name,qty:0,statuses:{}};
+              grouped[name].qty+=qtyTotal;
+              grouped[name].statuses[st]=(grouped[name].statuses[st]||0)+qtyTotal;
+            });
+          awaitingCache[this.st.table]={
+            table_code:tData.table_code || ('Stůl '+this.st.table),
+            lastSeen:Date.now(),
+            items:Object.values(grouped)
+          };
+        }
+      }
+    }
+
+    try{
+      const r=await fetch(`${API}?action=create-receipt`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+      const j=await r.json();
+      if(!j.success) throw new Error(j.error||j.message||'Chyba vytvoření účtenky');
+
+      showToast('Účtenka #'+j.data.receipt_number+' vytvořena','#157347');
+
+      fetch(`${API}?action=proxy-print`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({doc_type:'receipt',receipt_number:j.data.receipt_number})
+      }).catch(()=>{});
+
+      await loadTables();
+
+      const still=tables.find(x=>x.table_number===this.st.table);
+      if(still && still.allRawItems.some(i=>i.__outstanding>0)){
+        this.open(this.st.table);
+      }else{
+        this.close();
+      }
+    }catch(e){
+      showToast('Platba neproběhla: '+e.message,'#c53030');
+      btn.disabled=false;
+    }finally{
+      this.submitting=false;
+      this.updateTotals();
+    }
+  },
+  async reprintLast(tableNumber){
+    try{
+      const r=await fetch(`${API}?action=get-bill&table=${encodeURIComponent(tableNumber)}`);
+      const j=await r.json();
+      if(!j.success) throw new Error(j.error||'Chyba účtu');
+      const prs=j.data.prior_receipts||[];
+      if(!prs.length){showToast('Žádná účtenka k reprintu','#744210');return;}
+      const last=prs[prs.length-1];
+      const rn=getItemValue(last,'receipt_number','id');
+      if(!rn){showToast('Číslo účtenky nenalezeno','#744210');return;}
+      const rr=await fetch(`${API}?action=reprint-receipt&receipt_number=${encodeURIComponent(rn)}`,{method:'POST'});
+      const rj=await rr.json();
+      if(!rj.success) throw new Error(rj.error||'Chyba reprintu');
+      showToast('Reprint #'+rn+' odeslán','#157347');
+    }catch(e){
+      showToast(e.message,'#c53030');
+    }
+  },
+  cancelState:{groupKey:null,qty:0,max:0},
+  openCancel(key){
+    const g=this.st.aggregated.find(x=>x.key===key); if(!g)return;
+    const max=g.qty_outstanding - g.pay_qty;
+    if(max<=0){showToast('Nelze stornovat – vše vybráno k platbě','#744210');return;}
+    this.cancelState={groupKey:key,qty:1,max};
+    this.renderCancelModal(g.name,g.note,max);
+  },
+  renderCancelModal(name,note,max){
+    const bg=document.getElementById('cancelModalBg');
+    bg.style.display='flex';
+    bg.innerHTML=`<div class="cancel-modal">
+      <h3>Storno položky</h3>
+      <div class="cancel-line">${escapeHtml(name)}${note?`<div style="font-size:12px;color:#a65;font-style:italic;">${escapeHtml(note)}</div>`:''}</div>
+      <div style="font-size:12px;color:#444;">Maximálně lze zrušit: ${max} ks</div>
+      <div class="cancel-qty">
+        <button onclick="billPay.changeCancelQty(-1)">−</button>
+        <span id="cancelQty">${this.cancelState.qty}</span>
+        <button onclick="billPay.changeCancelQty(1)">+</button>
+      </div>
+      <div class="cancel-reason">
+        <label style="font-weight:600;font-size:13px;">Důvod (volitelné):</label>
+        <textarea id="cancelReason" placeholder="Např. omyl zákazníka"></textarea>
+      </div>
+      <div class="cancel-actions">
+        <button class="btn-grey" onclick="billPay.closeCancel()">Zpět</button>
+        <button class="btn-red" onclick="billPay.confirmCancel()">Zrušit položky</button>
+      </div>
+    </div>`;
+  },
+  changeCancelQty(d){
+    this.cancelState.qty=Math.max(1,Math.min(this.cancelState.max,this.cancelState.qty+d));
+    document.getElementById('cancelQty').textContent=this.cancelState.qty;
+  },
+  closeCancel(){
+    const bg=document.getElementById('cancelModalBg');
+    bg.style.display='none'; bg.innerHTML='';
+    this.cancelState={groupKey:null,qty:0,max:0};
+  },
+  async confirmCancel(){
+    const {groupKey,qty}=this.cancelState;
+    if(!groupKey||qty<=0)return;
+    const reason=(document.getElementById('cancelReason')?.value||'').trim();
+    const g=this.st.aggregated.find(x=>x.key===groupKey);
+    if(!g){this.closeCancel();return;}
+    let need=qty;
+    const toSend=[];
+    for(const ref of g.itemRefs){
+      if(need<=0) break;
+      const available=ref.outstanding;
+      const take=Math.min(available,need);
+      if(take>0){toSend.push({order_item_id:ref.id,cancel_qty:take});need-=take;}
+    }
+    if(!toSend.length){showToast('Nelze alokovat storno','#744210');this.closeCancel();return;}
+    try{
+      for(const it of toSend){
+        let resp=await fetch(`${API}?action=cancel-item`,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({order_item_id:it.order_item_id,cancel_qty:it.cancel_qty,reason})
+        });
+        let jr=null; try{jr=await resp.json();}catch(_){}
+        if(!jr||!jr.success){
+          resp=await fetch(`${API}?action=cancel-order-item`,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({order_item_id:it.order_item_id,cancel_qty:it.cancel_qty,reason})
+          });
+          try{jr=await resp.json();}catch(_){}
+          if(!jr||!jr.success) throw new Error(jr && (jr.error||jr.message)?(jr.error||jr.message):'Storno selhalo');
+        }
+      }
+      showToast('Storno úspěšné','#157347');
+      this.closeCancel();
+      await loadTables();
+      const still=tables.find(x=>x.table_number===this.st.table);
+      if(still && still.allRawItems.some(i=>i.__outstanding>0)){
+        this.open(this.st.table);
+      }else{
+        this.close();
+      }
+    }catch(e){
+      showToast(e.message,'#c53030');
+    }
+  }
+};
+window.billPay=billPay;
+window.openTableChangeModal=openTableChangeModal;
+window.closeTableChangeModal=closeTableChangeModal;
+window.selectNewTableChange=selectNewTableChange;
+window.confirmTableChange=confirmTableChange;
+
+/* ================== POMOCNÉ & PERIODICKÉ ================== */
+document.getElementById('cancelModalBg').addEventListener('click',e=>{
+  if(e.target.id==='cancelModalBg') billPay.closeCancel();
+});
+document.getElementById('paymentModalBg').addEventListener('click',e=>{
+  if(e.target.id==='paymentModalBg') billPay.close();
+});
+document.getElementById('groupQtyModalBg').addEventListener('click',e=>{
+  if(e.target.id==='groupQtyModalBg') closeGroupQtyModal();
+});
+
+function updateLastUpdateTime(){
+  document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString();
+}
+
+loadTables();
+setInterval(()=>{
+  const anyModalOpen=['paymentModalBg','cancelModalBg','groupQtyModalBg']
+    .some(id=>document.getElementById(id).style.display==='flex');
+  if(!anyModalOpen) loadTables();
+},10000);
+</script>
+</body>
+</html>

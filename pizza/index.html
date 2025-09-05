@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obsluha - Restaurace</title>
+   <style>
+        /* Všechny CSS styly zůstávají stejné... */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            min-height: 100vh;
+            padding: 15px;
+        }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 {
+            color: white;
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        /* KONTEJNER PRO PERGOLY - GRID LAYOUT */
+        .pergolas-container {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+                 .piaggio .table-btn.to_clean {
+             background: linear-gradient(135deg, #fbbf24, #f59e0b); 
+             border-left-color: #fbbf24;
+         }
+ 
++        /* NOVÁ LOKACE VENKU */
++        .venku .table-btn { 
++            border-left: 3px solid #0EA5E9; 
++            background: linear-gradient(135deg,#f0f9ff,#e0f2fe);
++        }
++        .venku .table-btn:hover {
++            border-color:#0284C7;
++            background: linear-gradient(135deg,#e0f2fe,#bae6fd);
++        }
++        .venku .table-btn.occupied {
++            background: linear-gradient(135deg,#e53e3e,#c53030);
++            border-left-color:#e53e3e;
++        }
++        .venku .table-btn.to_clean {
++            background: linear-gradient(135deg,#fbbf24,#f59e0b);
++            border-left-color:#fbbf24;
++        }
+        
+        /* RESPONZIVNÍ GRID PRO PERGOLY */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            /* iPad - 2 sloupce */
+            .pergolas-container {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+        }
+        
+        @media (min-width: 1025px) {
+            /* Desktop - 2-3 sloupce podle šířky */
+            .pergolas-container {
+                grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                gap: 15px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            /* Mobil - 1 sloupec */
+            .pergolas-container {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+        }
+        
+        /* PERGOLA SEKCE */
+        .pergola-section {
+            break-inside: avoid;
+            page-break-inside: avoid;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* NADPISY PERGOL */
+        .location-title {
+            color: #ee5a24;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin: 0 0 8px 0;
+            padding: 8px 15px;
+            background: linear-gradient(135deg, rgba(238, 90, 36, 0.1), rgba(238, 90, 36, 0.05));
+            border-left: 4px solid #ee5a24;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .pergola-title-main {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .pergola-count {
+            font-size: 0.75em;
+            opacity: 0.7;
+            background: rgba(238,90,36,0.1);
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        
+        /* TABLES GRID */
+        .tables-grid {
+            display: grid;
+            gap: 8px;
+            padding: 12px;
+            margin: 0;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            border: 1px solid rgba(238, 90, 36, 0.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            width: 100%;
+            box-sizing: border-box;
+            flex: 1;
+        }
+        
+        /* TLAČÍTKA STOLŮ */
+        .table-btn {
+            min-width: 50px;
+            min-height: 50px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            background: linear-gradient(135deg, #fafbfc, #f1f5f9);
+            color: #2d3748;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .table-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+            border-color: #667eea;
+        }
+
+        .table-btn.occupied { 
+            background: linear-gradient(135deg, #e53e3e, #c53030); 
+            color: #fff; 
+            border-color: #e53e3e;
+        }
+
+        .table-btn.to_clean { 
+            background: linear-gradient(135deg, #fbbf24, #f59e0b); 
+            color: #2d3748; 
+            border-color: #fbbf24;
+        }
+        
+        /* RESPONZIVNÍ GRIDY PRO STOLY */
+        
+        /* Základní gridy */
+        .tables-grid.small { 
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .tables-grid.medium { 
+            grid-template-columns: repeat(5, 1fr);
+        }
+
+        .tables-grid.large { 
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .tables-grid.sebou { 
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        /* ✅ PIAGGIO - JEDNOTLIVÝ STŮL */
+        .tables-grid.piaggio { 
+            grid-template-columns: 1fr;
+            max-width: 120px;
+        }
+        
+        /* iPad optimalizace */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .table-btn {
+                min-width: 48px;
+                min-height: 48px;
+                font-size: 0.85em;
+            }
+            
+            .location-title {
+                font-size: 1em;
+                padding: 6px 12px;
+            }
+            
+            .tables-grid {
+                padding: 10px;
+                gap: 6px;
+            }
+            
+            /* Menší gridy pro iPad - vejdou se do sloupců */
+            .tables-grid.small { 
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .tables-grid.medium { 
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .tables-grid.large { 
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .tables-grid.sebou { 
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            /* ✅ PIAGGIO NA iPADU */
+            .tables-grid.piaggio { 
+                grid-template-columns: 1fr;
+                max-width: 100px;
+            }
+        }
+
+        /* Mobil */
+        @media (max-width: 768px) {
+            .location-title {
+                padding: 6px 10px;
+                font-size: 0.95em;
+            }
+            
+            .tables-grid {
+                padding: 8px;
+                gap: 5px;
+            }
+            
+            .table-btn {
+                min-width: 45px;
+                min-height: 45px;
+                font-size: 0.8em;
+            }
+            
+            .tables-grid.small, 
+            .tables-grid.medium, 
+            .tables-grid.large,
+            .tables-grid.sebou,
+            .tables-grid.piaggio,
+            .tables-grid.venku {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Barevné rozlišení pergol */
+        .pergola-1 .table-btn { border-left: 3px solid #3B82F6; }
+        .pergola-2 .table-btn { border-left: 3px solid #10B981; }
+        .pergola-3 .table-btn { border-left: 3px solid #8B5CF6; }
+        .pergola-4 .table-btn { border-left: 3px solid #F59E0B; }
+        .olivy .table-btn { border-left: 3px solid #059669; }
+        .auto .table-btn { border-left: 3px solid #DC2626; }
+        .sebou .table-btn { 
+            border-left: 3px solid #7C3AED; 
+            background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+        }
+
+        /* ✅ PŘIDANÉ STYLY PRO PIAGGIO */
+        .piaggio .table-btn { 
+            border-left: 3px solid #FF6B35; 
+            background: linear-gradient(135deg, #fff7f0, #ffede0);
+        }
+
+        .piaggio .table-btn:hover {
+            border-color: #FF6B35;
+            background: linear-gradient(135deg, #ffede0, #ffd4c0);
+        }
+
+        .piaggio .table-btn.occupied {
+            background: linear-gradient(135deg, #e53e3e, #c53030); 
+            border-left-color: #e53e3e;
+        }
+
+        .piaggio .table-btn.to_clean {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b); 
+            border-left-color: #fbbf24;
+        }
+
+        .sebou .table-btn:hover {
+            border-color: #7C3AED;
+            background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
+        }
+
+        .sebou .table-btn.occupied {
+            background: linear-gradient(135deg, #e53e3e, #c53030); 
+            border-left-color: #e53e3e;
+        }
+
+        .sebou .table-btn.to_clean {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b); 
+            border-left-color: #fbbf24;
+        }
+
+        /* Zbytek stylů... */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.1);
+            padding: 6px 12px;
+            border-radius: 15px;
+            margin-bottom: 12px;
+            justify-content: center;
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .nav-link {
+            padding: 8px 15px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+        .nav-link.active { background: white; color: #ff6b6b; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .section-title {
+            font-size: 1.4em;
+            color: #ee5a24;
+            margin: 15px 0 8px 0;
+            font-weight: bold;
+        }
+        
+        /* Print status styly */
+        .print-status {
+            background: rgba(255,255,255,0.95);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 15px 0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            display: none;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .print-status.success {
+            border-left: 3px solid #28a745;
+            color: #155724;
+        }
+        
+        .print-status.error {
+            border-left: 3px solid #dc3545;
+            color: #721c24;
+        }
+        
+        .print-status.info {
+            border-left: 3px solid #17a2b8;
+            color: #0c5460;
+        }
+        
+        /* Menu styly */
+        .menu-section { margin: 15px 0; }
+        .menu-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 12px;
+        }
+        .menu-item {
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            padding: 12px 10px;
+        }
+        .item-title { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; color: #222; }
+        .item-desc { color: #555; font-size: .9em; margin-bottom: 8px; }
+        .item-price { color: #5a67d8; font-weight: bold; font-size: 1em; margin-bottom: 8px; }
+        .item-controls { display: flex; gap: 6px; align-items: center; }
+        .item-btn {
+            background: #5a67d8; color: #fff; border: none; border-radius: 5px;
+            padding: 6px 10px; font-weight: bold; cursor: pointer; transition: background .18s;
+            font-size: 0.9em;
+        }
+        .item-btn:hover { background: #F44336;}
+        .item-note { width: 100%; padding: 5px 7px; border: 1px solid #cbd5e1; border-radius: 5px; margin-bottom: 5px; font-size: .9em;}
+        .cart { background: #f1f5f9; border-radius: 10px; padding: 12px 15px; margin: 15px 0;}
+        .cart-title { font-size: 1.1em; font-weight: bold; color: #2d3748; margin-bottom: 8px;}
+        .cart-empty { color: #8e9ab2; text-align: center; margin: 15px 0; font-size: 0.9em;}
+        .cart-list { list-style: none; padding: 0; margin: 0 0 10px 0;}
+        .cart-item { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding: 6px 0;}
+        .cart-item:last-child { border-bottom: none;}
+        .cart-item-details { flex: 1;}
+        .cart-item-name { font-weight: bold; font-size: 0.95em; }
+        .cart-item-note { font-size: .9em; color: #777; font-style: italic; }
+        .cart-item-qty { color: #555; margin-left: 6px; font-size: 0.9em;}
+        .cart-item-total { font-weight: bold; color: #5a67d8; font-size: 0.95em; }
+        .cart-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px;}
+        .cart-sum { font-size: 1em; color: #2d3748; font-weight: bold;}
+        .cart-btn { background: #38a169; color: #fff; border: none; border-radius: 6px; padding: 8px 18px; font-size: 1em; font-weight: bold; cursor: pointer; transition: background .17s;}
+        .cart-btn:disabled { background: #a0aec0; cursor: not-allowed;}
+        
+        /* Cart item buttons kompaktnější */
+        .cart-item button {
+            width: 32px;
+            height: 32px;
+            font-size: 16px;
+            margin: 0 1px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cart-item button:hover {
+            background: #f5f5f5;
+        }
+        .cart-item button:last-child {
+            color: #e53e3e;
+        }
+        
+        .order-section { margin: 20px 0 12px 0;}
+        .order-title { font-size: 1.1em; font-weight: bold; margin-bottom: 8px;}
+        .order-list { list-style: none; padding: 0; margin: 0;}
+        .order-item { display: flex; align-items: flex-start; gap: 12px; border-bottom: 1px solid #e2e8f0; padding: 6px 0;}
+        .order-item.reserved-order { 
+            background: rgba(102, 126, 234, 0.05); 
+            border-left: 3px solid #667eea; 
+            padding-left: 8px;
+            border-radius: 4px;
+        }
+        .order-status { font-size: .85em; border-radius: 4px; padding: 2px 6px; margin-left: 6px;}
+        .status-pending { background: #e2e8f0; color: #222; }
+        .status-preparing { background: #faf089; color: #b7791f;}
+        .status-ready { background: #68d391; color: #22543d;}
+        .status-delivered { background: #9ae6b4; color: #22543d;}
+        .status-problem { background: #feb2b2; color: #742a2a;}
+        .status-cancelled { background: #e53e3e; color: #fff;}
+        .order-note { font-size: .9em; color: #888; font-style: italic;}
+        .msg { background: #e6fffa; color: #234e52; border-radius: 6px; padding: 10px; margin: 12px 0 5px 0; text-align: center; font-weight: bold; font-size: 0.9em;}
+        .err { background: #fff5f5; color: #c53030; border-radius: 6px; padding: 10px; margin: 12px 0 5px 0; text-align: center; font-weight: bold; font-size: 0.9em;}
+
+        @media (max-width: 650px) {
+            .container { padding: 5px 3px 12px 3px; }
+            .menu-items { grid-template-columns: 1fr; }
+        }
+</style>
+</head>
+<body>
+    <!-- HTML zůstává stejné -->
+    <div class="header">
+        <h1>🍕 Pizza dal Cortile</h1>
+        <div id="userInfo" class="user-info" style="display: none;">
+            <span>👤 Přihlášen jako: <strong id="currentUser"></strong></span>
+            <button class="logout-btn" onclick="logout()">Odhlásit se</button>
+        </div>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link active" id="nav-obsluha">🏠 Objednávky</a>
+            <a href="kitchen.html" class="nav-link" id="nav-kuchyn">👨‍🍳 Kuchyň</a>
+            <a href="pasta-kuchyn.html" class="nav-link " id="nav-pasta">🍝 Pasta kuchyň</a>
+            <a href="bar.html" class="nav-link" id="nav-bar">🍺 Bar</a>
+            <a href="serving.html" class="nav-link" id="nav-servirovani">🍽️ Servírování</a>
+            <a href="billing.html" class="nav-link" id="nav-uctovani">💰 Účtování</a>
+            <a href="historie.html" class="nav-link">📋 Historie</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="msg"></div>
+        
+        <!-- Print status indikátor -->
+        <div id="printStatus" class="print-status">
+            <div id="printMessage"></div>
+        </div>
+        
+        <div class="section-title">Vyberte stůl:</div>
+        
+        <!-- NOVÝ KONTEJNER PRO PERGOLY -->
+        <div id="tables" class="pergolas-container"></div>
+        
+        <div id="cleanTableSection" style="margin-top: 20px; text-align: center; display: none;">
+            <button class="item-btn" onclick="markTableAsCleaned()">Označit stůl jako uklizený</button>
+        </div>
+        
+        <section id="menu">
+            <div class="menu-section">
+                <h2>Menu Pizzy</h2>
+                <div id="pizzaMenu" class="menu-items"></div>
+            </div>
+            <div class="menu-section">
+                <h2>Menu Nápoje</h2>
+                <div id="drinkMenu" class="menu-items"></div>
+            </div>
+        </section>
+        
+        <section id="cartSection" class="cart">
+            <div class="cart-title">🛒 Košík</div>
+            <ul id="cartList" class="cart-list"></ul>
+            <div>
+                <label for="customerName">Poznámka (jméno / telefon / úprava):</label>
+                <input type="text" id="customerName" class="item-note" placeholder="Např. Novák 777123456 bez sýra">
+                <small style="color:#666;">Tato poznámka se vytiskne na lístku (jméno, číslo, úpravy).</small>
+            </div>
+            <div class="cart-footer">
+                <span class="cart-sum" id="cartSum"></span>
+                <button class="cart-btn" id="cartSubmit" onclick="submitOrder()">Odeslat objednávku</button>
+            </div>
+        </section>
+        
+        <section id="ordersSection" class="order-section">
+            <div class="order-title">Aktuální objednávky u stolu</div>
+            <ul id="orderList" class="order-list"></ul>
+        </section>
+    </div>
+
+    <!-- Modal pro zadání jména -->
+    <div id="employeeModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; text-align: center;">
+            <h3>Zadejte své jméno</h3>
+            <input type="text" id="employeeNameInput" placeholder="Vaše jméno" style="padding: 10px; margin: 10px; border: 1px solid #ccc; border-radius: 5px;">
+            <br>
+            <button onclick="saveEmployeeName()" style="padding: 10px 20px; background: #38a169; color: white; border: none; border-radius: 5px; cursor: pointer;">Pokračovat</button>
+        </div>
+    </div>
+
+    <!-- Modal pro potvrzení objednávky -->
+    <div id="confirmOrderModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1001;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 10px; width: 90%; max-width: 500px; max-height: 90%; overflow-y: auto;">
+            <h3 style="margin: 0 0 20px 0; color: #333; text-align: center;">Potvrzení objednávky</h3>
+            
+            <!-- Číslo stolu -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                <strong style="color: #38a169; font-size: 1.2em;">Stůl: <span id="confirmTableNumber"></span></strong>
+            </div>
+            
+            <!-- Seznam položek -->
+            <div style="margin-bottom: 15px;">
+                <h4 style="margin: 0 0 10px 0; color: #555;">Položky:</h4>
+                <div style="border: 1px solid #e9ecef; border-radius: 5px; overflow: hidden;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 8px; text-align: left; border-bottom: 1px solid #dee2e6;">Položka</th>
+                                <th style="padding: 8px; text-align: center; border-bottom: 1px solid #dee2e6;">Ks</th>
+                                <th style="padding: 8px; text-align: right; border-bottom: 1px solid #dee2e6;">Cena</th>
+                            </tr>
+                        </thead>
+                        <tbody id="confirmOrderItems">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Celkem -->
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: right;">
+                <strong>Celkem: <span id="confirmTotalQty"></span> ks, <span id="confirmTotalPrice"></span> Kč</strong>
+            </div>
+            
+            <!-- Poznámka -->
+            <div style="margin-bottom: 15px;">
+                <strong>Poznámka: </strong>
+                <span id="confirmCustomerNote" style="font-style: italic;"></span>
+            </div>
+                                
+            <!-- Tlačítka -->
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="confirmBackBtn" onclick="closeConfirmModal()" style="padding: 12px 25px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">Zpět</button>
+                <button id="confirmSubmitBtn" onclick="confirmAndSendOrder()" style="padding: 12px 25px; background: #38a169; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">Potvrdit a odeslat</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Konstanta pro RPi tiskárnu
+        const PRINTER_API_URL = `http://${window.location.hostname}/pizza`;
+        
+        // Funkce pro zobrazení print statusu
+        function showPrintStatus(message, type = 'info') {
+            const status = document.getElementById('printStatus');
+            const messageEl = document.getElementById('printMessage');
+            
+            status.className = `print-status ${type}`;
+            messageEl.textContent = message;
+            status.style.display = 'block';
+            
+            // Automaticky skrýt po 5 sekundách
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Funkce pro automatické odeslání na tiskárnu
+        async function sendToPrinter(orderData) {
+            try {
+                console.log('Sending to printer via proxy:', orderData);
+                showPrintStatus('🖨️ Odesílám objednávku na tiskárnu...', 'info');
+                
+                const response = await fetch(`${API}?action=proxy-print`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(orderData)
+                });
+                
+                console.log('Printer response status:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Printer result:', result);
+                    
+                    if (result.success) {
+                        showPrintStatus('✅ Objednávka byla úspěšně vytištěna v kuchyni!', 'success');
+                        return true;
+                    } else {
+                        showPrintStatus(`❌ Chyba při tisku: ${result.error || 'Neznámá chyba'}`, 'error');
+                        return false;
+                    }
+                } else {
+                    showPrintStatus(`❌ Chyba připojení k tiskárně (HTTP ${response.status})`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Printer connection error:', error);
+                showPrintStatus('❌ Nelze se připojit k tiskárně', 'error');
+                return false;
+            }
+        }
+        
+        // Funkce pro správu uživatele
+        function logout() {
+            if (confirm('Opravdu se chcete odhlásit?')) {
+                localStorage.removeItem('employee_name');
+                localStorage.removeItem('employee_id');
+                location.reload();
+            }
+        }
+
+        function checkEmployeeName() {
+            const employeeName = localStorage.getItem('employee_name');
+            if (!employeeName) {
+                showEmployeeModal();
+            } else {
+                updateUserInfo();
+            }
+        }
+
+        function saveEmployeeName() {
+            const input = document.getElementById('employeeNameInput');
+            const name = input.value.trim();
+            if (name) {
+                localStorage.setItem('employee_name', name);
+                hideEmployeeModal();
+                updateUserInfo();
+            }
+        }
+
+        function updateUserInfo() {
+            const employeeName = localStorage.getItem('employee_name');
+            const userInfo = document.getElementById('userInfo');
+            const currentUser = document.getElementById('currentUser');
+            
+            if (employeeName) {
+                currentUser.textContent = employeeName;
+                userInfo.style.display = 'flex';
+            } else {
+                userInfo.style.display = 'none';
+            }
+        }
+
+        function showEmployeeModal() {
+            document.getElementById('employeeModal').style.display = 'block';
+        }
+
+        function hideEmployeeModal() {
+            document.getElementById('employeeModal').style.display = 'none';
+        }
+
+        // Hlavní proměnné
+        const API = 'api/restaurant-api.php';
+        let tables = [];
+        let pizzas = [];
+        let drinks = [];
+        let selectedTable = null;
+        let cart = [];
+        let orders = [];
+
+        // Funkce pro vymazání košíku (centralizovaná s lepším loggingem)
+        function clearCart() {
+            console.log('🧹 clearCart() called - current cart length:', cart.length);
+            console.log('🧹 Cart contents before clear:', cart.map(item => `${item.name} (${item.qty}x)`));
+            
+            cart = [];
+            document.getElementById('customerName').value = '';
+            renderCart();
+            
+            console.log('✅ Cart cleared successfully - new cart length:', cart.length);
+        }
+
+        // Utility funkce
+        function showMsg(msg, good=true) {
+            document.getElementById('msg').innerHTML = msg ? `<div class="${good?'msg':'err'}">${msg}</div>` : '';
+        }
+
+        function api(action, data={}, method='GET') {
+            let url = API + '?action=' + action;
+            if (method === 'GET' && Object.keys(data).length) {
+                url += '&' + new URLSearchParams(data);
+                return fetch(url).then(r=>r.json());
+            }
+            return fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: method==='GET'?null:JSON.stringify(data)
+            }).then(r=>r.json());
+        }
+
+        // ✅ OPRAVENÁ FUNKCE PRO STOLY
+        function selectTable(tableNumber) {
+            selectedTable = tableNumber;
+            renderTables();
+            renderCart();
+            refreshOrders();
+            showCleanTableButton();
+            showMsg('');
+        }
+
+        function refreshTables() {
+            api('tables').then(res => {
+                tables = res.success ? res.data.tables : [];
+                renderTables();
+            });
+        }
+
+        function renderTables() {
+            const el = document.getElementById('tables');
+            el.innerHTML = '';
+
+            // ✅ OPRAVENÉ MAPOVÁNÍ - PIAGGIO S JEDNÍM STOLEM XX
+            const pergolOrder = [
+                { name: '🌿 Pergola 1', key: 'Pergola 1', tables: ['P11', 'P12', 'P13', 'P14'], cssClass: 'pergola-1 small' },
+                { name: '🌿 Pergola 2', key: 'Pergola 2', tables: ['P21', 'P22', 'P23', 'P24', 'P25a', 'P25b'], cssClass: 'pergola-2 medium' },
+              { name: '🌿 Pergola 3', key: 'Pergola 3', tables: ['P31', 'P32', 'P33', 'P34', 'P35a', 'P35b'], cssClass: 'pergola-3 medium' },
+                { name: '🌿 Pergola 4', key: 'Pergola 4', tables: ['P41', 'P42', 'P43'], cssClass: 'pergola-4 small' },
+                { name: '🫒 Olivy', key: 'Olivy', tables: ['O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O7', 'O8'], cssClass: 'olivy large' },
+                { name: '📦 Sebou', key: 'Sebou', tables: ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9'], cssClass: 'sebou sebou' },
+                { name: '🚗 Auto', key: 'Auto', tables: ['A1', 'A2'], cssClass: 'auto small' },
+                { name: '🛵 Piaggio', key: 'PIAGGIO', tables: ['XX'], cssClass: 'piaggio piaggio' },
+                { name: '🌤️ Venku', key: 'VENKU', tables: ['V1','V2','V3'], cssClass: 'venku small' }
+                
+            ];
+
+            // Seskupení stolů podle lokace
+            const locationGroups = {};
+            tables.forEach(t => {
+                const locationName = t.location_name || t.location || 'Auto';
+                if (!locationGroups[locationName]) {
+                    locationGroups[locationName] = [];
+                }
+                locationGroups[locationName].push(t);
+            });
+
+            // Vykreslení podle definovaného pořadí
+            pergolOrder.forEach(pergola => {
+                const locationTables = locationGroups[pergola.key] || [];
+                
+                // Přeskočit prázdné sekce
+                if (locationTables.length === 0) return;
+
+                // PERGOLA SEKCE PRO GRID LAYOUT
+                const pergolaSectionDiv = document.createElement('div');
+                pergolaSectionDiv.className = 'pergola-section';
+
+                // NADPIS PERGOLY
+                const sectionTitle = document.createElement('div');
+                sectionTitle.className = 'location-title';
+                sectionTitle.innerHTML = `
+                    <div class="pergola-title-main">
+                        ${pergola.name}
+                    </div>
+                    <div class="pergola-count">
+    ${getTableCountText(locationTables.length)}
+</div>
+                `;
+                pergolaSectionDiv.appendChild(sectionTitle);
+
+                // Kontejner pro stoly
+                const tablesContainer = document.createElement('div');
+                tablesContainer.className = `tables-grid ${pergola.cssClass}`;
+
+                // Seřazení stolů podle očekávaného pořadí
+                const sortedTables = pergola.tables.map(expectedCode => 
+                    locationTables.find(t => t.table_code === expectedCode)
+                ).filter(Boolean);
+
+                // Přidej stoly které nejsou v očekávaném seznamu
+                const remainingTables = locationTables.filter(t => 
+                    !pergola.tables.includes(t.table_code)
+                );
+                
+                const allTables = [...sortedTables, ...remainingTables];
+
+                allTables.forEach(t => {
+                    let btnClass = 'table-btn';
+                    if (t.status === 'occupied') btnClass += ' occupied';
+                    if (t.status === 'to_clean') btnClass += ' to_clean';
+
+                    let style = '';
+                    if (String(selectedTable) === String(t.table_number)) {
+                        style = 'outline: 2px solid #38a169; outline-offset: 1px; transform: scale(1.03);';
+                    }
+
+                    const tableBtn = document.createElement('button');
+                    tableBtn.className = btnClass;
+                    tableBtn.style.cssText = style;
+                    tableBtn.onclick = () => selectTable(t.table_number);
+                    
+                    // ✅ OPRAVENÉ EMOJI PRO PIAGGIO
+                    const getEmoji = (key) => {
+                        if (key.includes('Pergola')) return '🌿';
+                        if (key === 'Olivy') return '🫒';
+                        if (key === 'Auto') return '🚗';
+                        if (key === 'PIAGGIO') return '🛵';
+                        if (key === 'Sebou') return '📦';
+                        if (key === 'VENKU') return '🌤️';
+                        return '';
+                    };
+                    
+                    tableBtn.innerHTML = `
+                        <div style="font-size: 0.5em; opacity: 0.4; margin-bottom: 1px;">
+                            ${getEmoji(pergola.key)}
+                        </div>
+                        <div style="font-weight: bold;">
+                            ${t.table_code}
+                        </div>
+                    `;
+
+                    tablesContainer.appendChild(tableBtn);
+                });
+
+                pergolaSectionDiv.appendChild(tablesContainer);
+                el.appendChild(pergolaSectionDiv);
+            });
+        }
+
+        // ✅ VŠECHNY OSTATNÍ FUNKCE
+        function refreshMenu() {
+            Promise.all([
+                api('pizza-categories'),
+                api('drink-categories')
+            ]).then(([foodRes, drinkRes]) => {
+                let allCategories = [];
+
+                if (foodRes.success) {
+                    allCategories = [...allCategories, ...foodRes.data.categories];
+                }
+
+                if (drinkRes.success) {
+                    allCategories = [...allCategories, ...drinkRes.data.categories];
+                }
+
+                Promise.all([
+                    api('pizza-menu'),
+                    api('drink-menu')
+                ]).then(([foodMenuRes, drinkMenuRes]) => {
+                    if (foodMenuRes.success) {
+                        pizzas = foodMenuRes.data.pizzas;
+                    }
+
+                    if (drinkMenuRes.success) {
+                        drinks = drinkMenuRes.data.drinks;
+                    }
+
+                    const sortedCategories = sortCategories(allCategories);
+                    renderCategoryMenus(sortedCategories);
+                });
+            });
+        }
+
+        function renderCategoryMenus(categories) {
+            const menuSection = document.getElementById('menu');
+            menuSection.innerHTML = '';
+
+            categories.forEach(category => {
+                const categoryId = category.replace(/[^a-zA-Z0-9]/g, '') + 'Menu';
+                const categoryPizzas = pizzas.filter(item => item.category === category);
+                const categoryDrinks = drinks.filter(item => item.category === category);
+
+                const sortItems = (items) => {
+                    return items.sort((a, b) => {
+                        const numA = parseInt(a.type.match(/\d+/) || [0]);
+                        const numB = parseInt(b.type.match(/\d+/) || [0]);
+                        return numA - numB;
+                    });
+                };
+
+                const sortedPizzas = sortItems(categoryPizzas);
+                const sortedDrinks = sortItems(categoryDrinks);
+                const categoryItems = [...sortedPizzas, ...sortedDrinks];
+
+                if (categoryItems.length > 0) {
+                    const categorySection = document.createElement('div');
+                    categorySection.className = 'menu-section';
+                    categorySection.innerHTML = `
+                        <h2>Menu ${category}</h2>
+                        <div id="${categoryId}" class="menu-items"></div>
+                    `;
+                    menuSection.appendChild(categorySection);
+
+                    renderMenu(categoryId, categoryItems, categoryPizzas.length > 0 ? 'pizza' : 'drink');
+                }
+            });
+        }
+
+        function sortCategories(categories) {
+            const categoryPriority = {
+                'Predkrm': 1, 'Pizza': 2, 'Pasta': 3, 'Dezert': 4,
+                'Negroni': 5, 'Spritz': 6, 'Koktejl': 7, 'Digestiv': 8,
+                'Vino': 9, 'Pivo': 10, 'Nealko': 11
+            };
+
+            return [...new Set(categories)].sort((a, b) => {
+                const priorityA = categoryPriority[a] || 999;
+                const priorityB = categoryPriority[b] || 999;
+                return priorityA - priorityB;
+            });
+        }
+
+        function renderMenu(id, items, type) {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            if (items.length === 0) {
+                el.innerHTML = '<div>Žádné položky v nabídce.</div>';
+                return;
+            }
+
+            el.innerHTML = '';
+            items.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'menu-item';
+                itemElement.innerHTML = `
+                    <div class="item-title">${item.name}</div>
+                    <div class="item-desc">${item.description || ''}</div>
+                    <div class="item-price">${item.price} Kč</div>
+                    <input placeholder="Poznámka (např. bez sýra, led...)" class="item-note" id="${type}-note-${item.id}">
+                    <div class="item-controls">
+                        <button class="item-btn" onclick="addToCart('${type}','${item.id}')">Přidat</button>
+                    </div>
+                `;
+                el.appendChild(itemElement);
+            });
+        }
+
+        // Funkce pro košík
+        function addToCart(type, id) {
+            const list = type==='pizza'?pizzas:drinks;
+            const item = list.find(x => x.id == id);
+            if (!item) return;
+            const note = document.getElementById(`${type}-note-${item.id}`).value.trim();
+            
+            let itemType = item.category || type;
+            
+            if (itemType === 'pizza') itemType = 'pizza';
+            else if (itemType === 'pasta' || itemType === 'Pasta') itemType = 'pasta';
+            else if (itemType === 'predkrm' || itemType === 'Predkrm') itemType = 'predkrm';
+            else if (itemType === 'dezert' || itemType === 'Dezert') itemType = 'dezert';
+            
+            let existing = cart.find(c=>c.type===itemType&&c.id==id&&c.note===note);
+            if(existing) existing.qty++;
+            else cart.push({type: itemType, id, name:item.name, price:item.price, qty:1, note});
+            renderCart();
+            document.getElementById(`${type}-note-${item.id}`).value = '';
+        }
+// Funkce pro správné skloňování slova "stůl" v češtině
+function getTableCountText(count) {
+    if (count === 1) {
+        return `${count} stůl`;
+    } else if (count >= 2 && count <= 4) {
+        return `${count} stoly`;
+    } else {
+        return `${count} stolů`;
+    }
+}
+
+        function renderCart() {
+            const el = document.getElementById('cartList');
+            if (!cart.length) { 
+                el.innerHTML = '<li class="cart-empty">Košík je prázdný</li>'; 
+            } else {
+                el.innerHTML = '';
+                cart.forEach((item, idx) => {
+                    el.innerHTML += `<li class="cart-item">
+                        <div class="cart-item-details">
+                            <span class="cart-item-name">${item.name}</span>
+                            <span class="cart-item-qty">${item.qty}×</span>
+                            ${item.note?`<div class="cart-item-note">📝 ${item.note}</div>`:''}
+                        </div>
+                        <div class="cart-item-total">${item.price*item.qty} Kč</div>
+                        <button onclick="changeQty(${idx},-1)" style="margin-left:7px;">−</button>
+                        <button onclick="changeQty(${idx},1)">+</button>
+                        <button onclick="removeCart(${idx})" style="margin-left:5px;color:red;">✖</button>
+                    </li>`;
+                });
+            }
+            const sum = cart.reduce((s,x)=>s+x.price*x.qty,0);
+            document.getElementById('cartSum').textContent = 'Celkem: ' + sum + ' Kč';
+            document.getElementById('cartSubmit').disabled = !cart.length || !selectedTable;
+        }
+
+        function changeQty(idx, delta) {
+            cart[idx].qty += delta;
+            if (cart[idx].qty < 1) cart.splice(idx,1);
+            renderCart();
+        }
+
+        function removeCart(idx) {
+            cart.splice(idx,1);
+            renderCart();
+        }
+
+        // FUNKCE PRO OTEVŘENÍ POTVRZOVACÍHO MODÁLU
+        function submitOrder() {
+            openConfirmModal();
+        }
+
+        function openConfirmModal() {
+            if (!cart || !cart.length || !selectedTable) return;
+            
+            // Populate modal with order details
+            populateConfirmModal();
+            
+            // Show modal
+            const modal = document.getElementById('confirmOrderModal');
+            if (modal) {
+                modal.style.display = 'block';
+            }
+        }
+
+        function populateConfirmModal() {
+            // Set table number with defensive programming
+            const table = tables && tables.find ? tables.find(t => t.table_number == selectedTable) : null;
+            const tableCode = table ? table.table_code : `Stůl ${selectedTable}`;
+            document.getElementById('confirmTableNumber').textContent = tableCode;
+            
+            // Aggregate identical items (same name, price, and note)
+            const aggregatedItems = {};
+            if (cart && cart.length > 0) {
+                cart.forEach(item => {
+                    const key = `${item.name}_${item.price}_${item.note || ''}`;
+                    if (aggregatedItems[key]) {
+                        aggregatedItems[key].qty += item.qty;
+                    } else {
+                        aggregatedItems[key] = {
+                            name: item.name,
+                            price: item.price,
+                            qty: item.qty,
+                            note: item.note
+                        };
+                    }
+                });
+            }
+            
+            // Populate items table
+            const itemsContainer = document.getElementById('confirmOrderItems');
+            if (itemsContainer) {
+                itemsContainer.innerHTML = '';
+                
+                let totalQty = 0;
+                let totalPrice = 0;
+                
+                const itemsArray = Object.values(aggregatedItems);
+                itemsArray.forEach(item => {
+                    totalQty += item.qty;
+                    const lineTotal = item.price * item.qty;
+                    totalPrice += lineTotal;
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="padding: 8px; border-bottom: 1px solid #f1f3f4;">
+                            ${escapeHtml(item.name)}
+                            ${item.note ? `<br><small style="color: #666;">📝 ${escapeHtml(item.note)}</small>` : ''}
+                        </td>
+                        <td style="padding: 8px; text-align: center; border-bottom: 1px solid #f1f3f4;">${item.qty}</td>
+                        <td style="padding: 8px; text-align: right; border-bottom: 1px solid #f1f3f4;">${lineTotal} Kč</td>
+                    `;
+                    itemsContainer.appendChild(row);
+                });
+                
+                // Set totals
+                const totalQtyEl = document.getElementById('confirmTotalQty');
+                const totalPriceEl = document.getElementById('confirmTotalPrice');
+                if (totalQtyEl) totalQtyEl.textContent = totalQty;
+                if (totalPriceEl) totalPriceEl.textContent = totalPrice;
+            }
+            
+            // Set customer note (limit display to 120 chars)
+            const customerNameEl = document.getElementById('customerName');
+            const customerName = customerNameEl ? customerNameEl.value.trim() : '';
+            const displayNote = customerName || '(bez poznámky)';
+            const truncatedNote = displayNote.length > 120 ? displayNote.substring(0, 120) + '...' : displayNote;
+            const noteEl = document.getElementById('confirmCustomerNote');
+            if (noteEl) noteEl.textContent = truncatedNote;
+            
+                }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmOrderModal').style.display = 'none';
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // REFACTORED FUNCTION - ACTUAL ORDER SUBMISSION
+        async function confirmAndSendOrder() {
+    // Rezervační checkbox odstraněn – backend určí is_reserved automaticky
+            
+            console.log('=== SUBMIT ORDER START ===');
+            console.log('Cart items before submission:', cart.length);
+            
+            const customerName = document.getElementById('customerName').value;
+            const items = [];
+            let orderWasCreated = false; // 🔑 Track if order was successfully created
+            
+            // Příprava položek pro databázi
+            cart.forEach(item => {
+                for (let i = 0; i < item.qty; i++) {
+                    items.push({
+                        type: item.type,
+                        name: item.name,
+                        quantity: 1,
+                        unit_price: item.price,
+                        note: item.note
+                    });
+                }
+            });
+            
+            console.log('Data to send:', {
+                table: selectedTable,
+                items,
+                customer_name: customerName,
+                employee_name: localStorage.getItem('employee_name')
+                // NOTE: is_reserved is now auto-detected by backend based on reservations
+            });
+            
+            // Disable modal buttons during processing
+            const backBtn = document.getElementById('confirmBackBtn');
+            const submitBtn = document.getElementById('confirmSubmitBtn');
+            const originalBackText = backBtn.textContent;
+            const originalSubmitText = submitBtn.textContent;
+            
+            backBtn.disabled = true;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Odesílám...';
+            
+            const cartBackup = [...cart];
+            showMsg('🔄 Odesílám objednávku...');
+            
+            try {
+                const response = await fetch(API + '?action=add-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table: selectedTable,
+                        items,
+                        customer_name: customerName,
+                        employee_name: localStorage.getItem('employee_name')
+                        // NOTE: Backend now auto-detects is_reserved based on reservations for table
+                    })
+                });
+                
+                console.log('API Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('HTTP Error:', response.status, errorText);
+                    throw new Error(`Server error (${response.status})`);
+                }
+                
+                let orderResponse;
+                try {
+                    const responseText = await response.text();
+                    console.log('Raw response:', responseText);
+                    orderResponse = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('JSON Parse error:', parseError);
+                    throw new Error('Server vrátil neplatnou odpověď');
+                }
+                
+                console.log('Parsed response:', orderResponse);
+                
+                // ✅ ZJEDNODUŠENÁ LOGIKA - pokud dostaneme order_id, košík se MUSÍ vymazat
+                const orderId = orderResponse.data?.order_id;
+                
+                if (orderId) {
+                    // 🔑 Označit že objednávka byla vytvořena
+                    orderWasCreated = true;
+                    
+                    // ✅ OKAMŽITÉ VYMAZÁNÍ KOŠÍKU - bez dalších podmínek
+                    console.log('✅ ORDER_ID RECEIVED:', orderId, '- CLEARING CART IMMEDIATELY');
+                    clearCart();
+                    console.log('✅ CART CLEARED - Current length:', cart.length);
+                    
+                    if (orderResponse.success) {
+                        showMsg('✅ Objednávka byla úspěšně odeslána!');
+                    } else {
+                        showMsg('✅ Objednávka byla uložena, ale nastala chyba: ' + (orderResponse.error || 'Neznámá chyba'));
+                        console.warn('Order saved but with secondary error:', orderResponse.error);
+                    }
+                    
+                    // TODO: Could display reservation badge if orderResponse.data?.is_reserved === 1
+                    // Example: if (orderResponse.data?.is_reserved) { showMsg('📅 Objednávka byla přiřazena k rezervaci!'); }
+                    
+                    const kitchenItems = items.filter(item => 
+                        ['pizza', 'pasta', 'predkrm', 'dezert'].includes(item.type)
+                    );
+                    
+                    if (kitchenItems.length > 0) {
+                        const table = tables.find(t => t.table_number == selectedTable);
+                        const tableCode = table ? table.table_code : `Stůl ${selectedTable}`;
+                        
+                        const printData = {
+                            order_id: orderId,
+                            table_code: tableCode,
+                            employee_name: localStorage.getItem('employee_name') || 'Neznámý',
+                            customer_name: customerName || '',
+                            created_at: new Date().toISOString(),
+                            items: kitchenItems.map(item => ({
+                                quantity: item.quantity,
+                                item_name: item.name,
+                                note: item.note || ''
+                            }))
+                        };
+                        
+                        console.log('Sending to printer:', printData);
+                        
+                        sendToPrinter(printData).then(printSuccess => {
+                            if (printSuccess) {
+                                showMsg('✅ Objednávka byla úspěšně odeslána a vytištěna!');
+                            } else {
+                                showMsg('⚠️ Objednávka byla odeslána, ale tisk se nezdařil.');
+                            }
+                        }).catch(err => {
+                            console.error('Print error:', err);
+                            showMsg('⚠️ Objednávka byla odeslána, ale chyba při tisku.');
+                        });
+                    }
+                    
+                    refreshOrders();
+                    refreshTables();
+                    
+                    // Close modal on success
+                    closeConfirmModal();
+                    
+                } else {
+                    // ❌ Objednávka nebyla vytvořena - pravá chyba
+                    console.error('❌ ORDER CREATION FAILED - No order_id received:', orderResponse.error);
+                    showMsg(orderResponse.error || 'Chyba při vytváření objednávky - zkuste to znovu', false);
+                }
+            } catch (error) {
+                console.error('❌ SUBMIT ERROR:', error);
+                
+                // 🔑 ZJEDNODUŠENÁ LOGIKA - restore cart POUZE pokud objednávka NEBYLA vytvořena
+                if (!orderWasCreated && cartBackup.length > 0) {
+                    cart = [...cartBackup];
+                    renderCart();
+                    console.log('Cart restored from backup - order was NOT created, length:', cart.length);
+                } else if (orderWasCreated) {
+                    console.log('Cart NOT restored - order WAS created successfully');
+                } else {
+                    console.log('Cart NOT restored - no backup available');
+                }
+                
+                showMsg('Chyba při odesílání: ' + error.message + ' - zkuste to znovu', false);
+            } finally {
+                // Re-enable modal buttons
+                backBtn.disabled = false;
+                submitBtn.disabled = false;
+                backBtn.textContent = originalBackText;
+                submitBtn.textContent = originalSubmitText;
+                
+                console.log('=== SUBMIT ORDER END ===');
+                console.log('Final cart length:', cart.length);
+            }
+        }
+
+        function refreshOrders() {
+            if (!selectedTable) return;
+            api('table-orders', {table_number: selectedTable}).then(res => {
+                orders = res.success ? res.data.orders : [];
+                renderOrders();
+            });
+        }
+
+        function renderOrders() {
+            const el = document.getElementById('orderList');
+            if (!orders.length) { 
+                el.innerHTML = '<li>Žádné objednávky.</li>'; 
+                return; 
+            }
+            el.innerHTML = '';
+            orders.forEach(order => {
+                let statusClass = `status-${order.status}`;
+                let statusText = order.status;
+                let statusStyle = '';
+
+                const allDelivered = order.items.every(item => item.status === 'delivered');
+
+                if (allDelivered) {
+                    statusText = 'Doručeno';
+                    statusStyle = 'background-color: #9ae6b4; color: #22543d;';
+                } else {
+                    statusText = 'Doručována';
+                    statusStyle = 'background-color: #e53e3e; color: #fff;';
+                }
+
+                const isReserved = order.is_reserved === '1' || order.is_reserved === 1 || order.is_reserved === true;
+                const reservationBadge = isReserved ? '<span class="reservation-badge" style="background: #667eea; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.75em; margin-left: 6px;">📅 REZERVACE</span>' : '';
+
+                el.innerHTML += `<li class="order-item${isReserved ? ' reserved-order' : ''}">
+                    <div>
+                        <span>Objednávka #${order.id}</span>
+                        ${reservationBadge}
+                        <span class="order-status ${statusClass}" style="${statusStyle}">${statusText}</span>
+                    </div>
+                    <div>
+                        ${order.items.map(item=>
+                            `${item.item_name} (${item.quantity}×, ${item.unit_price} Kč)${item.note ? `<span class="order-note">📝 ${item.note}</span>`:''}`
+                        ).join('<br>')}
+                    </div>
+                </li>`;
+            });
+        }
+
+        // Úklid stolů
+        function showCleanTableButton() {
+            const cleanTableSection = document.getElementById('cleanTableSection');
+            if (!selectedTable) {
+                cleanTableSection.style.display = 'none';
+                return;
+            }
+
+            const table = tables.find(t => parseInt(t.table_number) === selectedTable);
+            if (table && table.status === 'to_clean') {
+                cleanTableSection.style.display = 'block';
+            } else {
+                cleanTableSection.style.display = 'none';
+            }
+        }
+
+        function markTableAsCleaned() {
+            fetch(API + '?action=mark-table-as-cleaned', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({table_number: selectedTable})
+            })
+            .then(r=>r.json())
+            .then(res => {
+                if (res.success) {
+                    showMsg('Stůl byl označen jako uklizený!');
+                    refreshTables();
+                    showCleanTableButton();
+                    refreshOrders();
+                } else {
+                    showMsg(res.error, false);
+                }
+            });
+        }
+
+        // Hlavní smyčka
+        function loop() {
+            refreshTables();
+            if (selectedTable) {
+                refreshOrders();
+            }
+            setTimeout(loop, 6000);
+        }
+
+        // Global functions pro onclick handlery
+        window.logout = logout;
+
+        // Sync reservation checkbox changes from modal to main form
+       
+        
+        // Optional: ESC key to close modal (only when not submitting)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('confirmOrderModal');
+                const submitBtn = document.getElementById('confirmSubmitBtn');
+                if (modal.style.display === 'block' && !submitBtn.disabled) {
+                    closeConfirmModal();
+                }
+            }
+        });
+
+        // Inicializace
+        checkEmployeeName();
+        refreshTables();
+        refreshMenu();
+        renderCart();
+        refreshOrders();
+        setTimeout(loop, 6000);
+    </script>
+</body>
+</html>

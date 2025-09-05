@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Historie účtenek</title>
+<style>
+body{font-family:'Segoe UI',Tahoma,Verdana,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;margin:0;padding:20px;color:#222;}
+.header{text-align:center;margin-bottom:30px;}
+.header h1{color:#fff;margin:0 0 10px;font-size:2.4em;text-shadow:2px 2px 6px rgba(0,0,0,.35);}
+.nav-links{display:flex;justify-content:center;gap:15px;flex-wrap:wrap;margin-bottom:15px;}
+.nav-link{padding:10px 20px;border-radius:25px;text-decoration:none;font-weight:500;background:rgba(255,255,255,.18);color:#fff;transition:.25s;}
+.nav-link:hover{background:rgba(255,255,255,.28);}
+.nav-link.active{background:#fff;color:#667eea;}
+.container{max-width:1400px;margin:0 auto;background:#fff;padding:28px 32px;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.15);}
+.section-title{font-size:1.5em;font-weight:700;color:#667eea;margin:5px 0 18px;}
+.filters{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px;}
+.filter-group{display:flex;flex-direction:column;gap:4px;min-width:150px;}
+.filter-group label{font-weight:600;font-size:.9em;color:#333;}
+.filter-group input,.filter-group select{padding:8px 10px;border:1px solid #d1d5ee;border-radius:8px;font-size:14px;}
+.filter-group button{background:#667eea;color:#fff;padding:10px 18px;border:none;border-radius:10px;font-weight:600;cursor:pointer;}
+.filter-group button:hover{background:#5564d4;}
+.history-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:18px;}
+.receipt-card{border:2px solid #667eea;border-radius:16px;padding:16px 18px;background:#f9faff;display:flex;flex-direction:column;gap:10px;box-shadow:0 4px 14px rgba(0,0,0,.08);position:relative;}
+.receipt-card:hover{transform:translateY(-3px);transition:.25s;}
+.rc-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e1e4f5;padding-bottom:6px;}
+.rc-title{font-weight:700;color:#667eea;font-size:1.05em;}
+.rc-table{font-weight:600;color:#764ba2;}
+.rc-meta{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:.75rem;color:#555;}
+.rc-meta div{display:flex;justify-content:space-between;gap:6px;}
+.amount-box{background:#eef1ff;padding:8px 10px;border-radius:10px;font-weight:700;color:#667eea;text-align:center;font-size:1.05em;}
+.rc-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.btn{border:none;cursor:pointer;padding:8px 14px;border-radius:8px;font-size:.8rem;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:.2s;}
+.btn-info{background:#667eea;color:#fff;}
+.btn-info:hover{background:#4f57c7;}
+.btn-print{background:#28a745;color:#fff;}
+.btn-print:hover{background:#1f7a32;}
+.btn-small{padding:6px 10px;font-size:.7rem;}
+.badge{position:absolute;top:-10px;right:-10px;background:#ff9800;color:#fff;font-size:.65rem;padding:4px 8px;border-radius:14px;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.25);}
+.badge-green{background:#28a745;}
+.empty-state{text-align:center;padding:60px 10px;color:#666;}
+.loading{text-align:center;padding:40px;color:#555;font-size:1.05em;}
+.last-update{text-align:center;color:#444;font-size:.85em;margin-top:24px;}
+.preview-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:1600;padding:20px;}
+.preview-modal{background:#fff;width:95%;max-width:520px;max-height:92vh;display:flex;flex-direction:column;border-radius:20px;box-shadow:0 12px 40px rgba(0,0,0,.4);overflow:hidden;}
+.pm-header{background:#667eea;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;font-weight:600;}
+.pm-body{padding:16px 20px;overflow:auto;font-size:.9rem;}
+.pm-footer{padding:12px 20px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #eee;background:#fafbff;}
+.receipt-items{margin:12px 0 4px;border-top:1px solid #e3e6f4;border-bottom:1px solid #e3e6f4;}
+.receipt-items-row{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px dashed #e0e2f2;font-size:.78rem;}
+.receipt-items-row:last-child{border-bottom:none;}
+.r-name{font-weight:600;color:#333;max-width:220px;word-wrap:break-word;}
+.r-note{font-size:.65rem;color:#666;font-style:italic;display:block;margin-top:2px;}
+.r-qty{color:#667eea;margin:0 6px;font-weight:600;}
+.r-price{font-weight:600;color:#764ba2;min-width:72px;text-align:right;}
+.total-line{margin-top:10px;font-weight:700;text-align:right;color:#667eea;font-size:.9rem;}
+.close-btn{background:#6c757d;color:#fff;}
+.close-btn:hover{background:#555d63;}
+@media(max-width:780px){
+  .rc-meta{grid-template-columns:1fr;}
+  .filters{flex-direction:column;align-items:stretch;}
+  .receipt-card{gap:8px;}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📋 Historie účtenek</h1>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">🏠 Objednávky</a>
+    <a href="kitchen.html" class="nav-link">👨‍🍳 Kuchyň</a>
+    <a href="pasta-kuchyn.html" class="nav-link" id="nav-pasta">🍝 Pasta kuchyň</a>
+    <a href="bar.html" class="nav-link">🍺 Bar</a>
+    <a href="serving.html" class="nav-link">🍽️ Servírování</a>
+    <a href="billing.html" class="nav-link">💰 Účtování</a>
+    <a href="historie.html" class="nav-link active">📋 Historie</a>
+  </div>
+</div>
+
+<div class="container">
+  <div class="section-title">Filtry</div>
+  <div class="filters">
+    <div class="filter-group">
+      <label>Datum od</label>
+      <input type="date" id="dateFrom">
+    </div>
+    <div class="filter-group">
+      <label>Datum do</label>
+      <input type="date" id="dateTo">
+    </div>
+    <div class="filter-group">
+      <label>Stůl</label>
+      <select id="tableFilter">
+        <option value="">Všechny</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Obsluha</label>
+      <select id="employeeFilter">
+        <option value="">Všichni</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>&nbsp;</label>
+      <button onclick="loadReceipts()">🔍 Hledat</button>
+    </div>
+  </div>
+
+  <div class="section-title">Účtenky</div>
+  <div class="history-grid" id="historyContainer">
+    <div class="loading">Načítání...</div>
+  </div>
+  <div class="last-update">Poslední aktualizace: <span id="lastUpdate">-</span></div>
+</div>
+
+<!-- Preview Modal -->
+<div id="previewBg" class="preview-bg" onclick="if(event.target.id==='previewBg'){closeReceiptPreview();}">
+  <div class="preview-modal" id="previewModal" style="display:none">
+    <div class="pm-header">
+      <span id="previewTitle">Účtenka</span>
+      <button class="btn btn-small close-btn" onclick="closeReceiptPreview()">✖</button>
+    </div>
+    <div class="pm-body" id="previewBody"></div>
+    <div class="pm-footer">
+      <button class="btn close-btn" onclick="closeReceiptPreview()">Zavřít</button>
+      <button class="btn btn-print" id="previewReprintBtn">Reprint</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='api/restaurant-api.php';
+let receipts=[];
+
+function formatCZK(v){return new Intl.NumberFormat('cs-CZ',{style:'currency',currency:'CZK',minimumFractionDigits:0}).format(v||0);}
+function setDatesInit(){
+  const to=new Date();
+  const from=new Date(); from.setDate(to.getDate()-7);
+  document.getElementById('dateTo').value=to.toISOString().slice(0,10);
+  document.getElementById('dateFrom').value=from.toISOString().slice(0,10);
+}
+function updateLast(){document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString('cs-CZ');}
+
+async function loadFilters(){
+  try{
+    const tRes=await fetch(`${API}?action=tables`);
+    const tJ=await tRes.json();
+    if(tJ.success && tJ.data && tJ.data.tables){
+      const sel=document.getElementById('tableFilter');
+      tJ.data.tables.forEach(t=>{
+        const o=document.createElement('option');
+        o.value=t.table_number;
+        o.textContent=t.table_code || ('Stůl '+t.table_number);
+        sel.appendChild(o);
+      });
+    }
+  }catch(e){}
+  try{
+    const eRes=await fetch(`${API}?action=employees-list`);
+    const eJ=await eRes.json();
+    if(eJ.success && eJ.data && eJ.data.employees){
+      const sel=document.getElementById('employeeFilter');
+      eJ.data.employees.forEach(emp=>{
+        const o=document.createElement('option');
+        o.value=emp.name;
+        o.textContent=`${emp.name} (${emp.order_count} obj.)`;
+        sel.appendChild(o);
+      });
+    }
+  }catch(e){}
+}
+
+async function loadReceipts(){
+  const cont=document.getElementById('historyContainer');
+  cont.innerHTML='<div class="loading">Načítání...</div>';
+  const df=document.getElementById('dateFrom').value;
+  const dt=document.getElementById('dateTo').value;
+  const tf=document.getElementById('tableFilter').value;
+  const ef=document.getElementById('employeeFilter').value;
+  const params=new URLSearchParams({action:'receipts-history',date_from:df,date_to:dt});
+  if(tf) params.append('table_number',tf);
+  if(ef) params.append('employee_name',ef);
+  try{
+    const r=await fetch(`${API}?${params.toString()}`);
+    const j=await r.json();
+    if(!j.success){
+      cont.innerHTML='<div class="empty-state">Chyba načítání: '+(j.error||j.message||'')+'</div>';
+      updateLast();return;
+    }
+    receipts=j.data.receipts||[];
+    renderReceipts();
+  }catch(e){
+    cont.innerHTML='<div class="empty-state">Chyba připojení</div>';
+  }
+  updateLast();
+}
+
+function renderReceipts(){
+  const cont=document.getElementById('historyContainer');
+  if(!receipts.length){
+    cont.innerHTML='<div class="empty-state">Žádné účtenky pro zvolené filtry</div>';
+    return;
+  }
+  cont.innerHTML=receipts.map(r=>{
+    return `<div class="receipt-card">
+      <div class="rc-head">
+        <div class="rc-title">#${r.receipt_number}</div>
+        <div class="rc-table">${r.table_code || ('Stůl '+r.table_number)}</div>
+      </div>
+      <div class="rc-meta">
+        <div><span>Datum:</span><span>${formatDateTime(r.paid_at)}</span></div>
+        <div><span>Obsluha:</span><span>${r.employee_name||'-'}</span></div>
+        <div><span>Metoda:</span><span>${r.payment_method}</span></div>
+        <div><span>Položky:</span><span>${r.items_count}</span></div>
+      </div>
+      <div class="amount-box">${formatCZK(r.total_amount)}</div>
+      <div class="rc-actions">
+        <button class="btn btn-info" onclick="viewReceipt(${r.receipt_number})">Detaily</button>
+        <button class="btn btn-print" onclick="reprint(${r.receipt_number})">Reprint</button>
+      </div>
+      ${r.reprint_count>0?`<span class="badge">Reprint: ${r.reprint_count}</span>`:''}
+    </div>`;
+  }).join('');
+}
+
+function formatDateTime(s){
+  if(!s) return '-';
+  return new Date(s.replace(' ','T')).toLocaleString('cs-CZ');
+}
+
+/* --- AGREGACE POLOŽEK ÚČTENKY --- */
+function aggregateReceiptItems(items){
+  const map={};
+  (items||[]).forEach(it=>{
+    const name = it.name || it.item_name || 'Položka';
+    const unit = Number(it.unit_price ?? it.price ?? 0);
+    const note = it.note || '';
+    const qty  = Number(it.pay_qty ?? it.quantity ?? it.qty ?? 1);
+    const key = name+'|'+unit+'|'+note;
+    if(!map[key]) map[key]={name,unit_price:unit,note,quantity:0};
+    map[key].quantity += qty;
+  });
+  return Object.values(map);
+}
+
+/* Preview */
+async function viewReceipt(num){
+  try{
+    const r=await fetch(`${API}?action=get-receipt&receipt_number=${num}`);
+    const j=await r.json();
+    if(!j.success){showInlinePreviewError(j.error||'Chyba');return;}
+    buildPreview(j.data);
+  }catch(e){
+    showInlinePreviewError(e.message);
+  }
+}
+
+function showInlinePreviewError(msg){
+  const bg=document.getElementById('previewBg');
+  const modal=document.getElementById('previewModal');
+  document.getElementById('previewTitle').textContent='Chyba';
+  document.getElementById('previewBody').innerHTML='<div style="color:#c0392b;font-weight:600;">'+msg+'</div>';
+  document.getElementById('previewReprintBtn').style.display='none';
+  bg.style.display='flex'; modal.style.display='flex';
+}
+
+function buildPreview(data){
+  const bg=document.getElementById('previewBg');
+  const modal=document.getElementById('previewModal');
+  document.getElementById('previewTitle').textContent='Účtenka #'+data.receipt_number;
+
+  const aggregated = aggregateReceiptItems(data.items||[]);
+  const itemsHtml = aggregated.map(it=>{
+    const qty = it.quantity;
+    const unit = it.unit_price;
+    return `<div class="receipt-items-row">
+      <div class="r-name">${it.name}${it.note?`<span class="r-note">${it.note}</span>`:''}</div>
+      <div class="r-qty">${qty}×</div>
+      <div class="r-price">${formatCZK(unit*qty)}</div>
+    </div>`;
+  }).join('') || '<div style="padding:8px 0;font-size:.75rem;color:#555;">(Bez položek)</div>';
+
+  document.getElementById('previewBody').innerHTML=`
+    <div style="font-size:.8rem;display:flex;flex-direction:column;gap:4px;">
+      <div><strong>Stůl:</strong> ${data.table_code || ('Stůl '+data.table_number)}</div>
+      <div><strong>Datum platby:</strong> ${formatDateTime(data.paid_at||data.original_paid_at)}</div>
+      <div><strong>Obsluha:</strong> ${data.employee_name||'-'}</div>
+      <div><strong>Metoda:</strong> ${data.payment_method}</div>
+      <div><strong>Položek (původní / zobrazeno):</strong> ${data.items_count} / ${aggregated.length}</div>
+    </div>
+    <div class="receipt-items">${itemsHtml}</div>
+    <div class="total-line">Celkem: ${formatCZK(data.total_amount)}</div>
+  `;
+  const btn=document.getElementById('previewReprintBtn');
+  btn.onclick=()=>reprint(data.receipt_number,true);
+  btn.style.display='inline-flex';
+  bg.style.display='flex'; modal.style.display='flex';
+}
+
+function closeReceiptPreview(){
+  document.getElementById('previewBg').style.display='none';
+  document.getElementById('previewModal').style.display='none';
+}
+
+async function reprint(num, fromPreview = false){
+  try{
+    // 1) DB reprint (zvýší reprint_count)
+    const r = await fetch(`${API}?action=reprint-receipt&receipt_number=${num}`, { method:'POST' });
+    const j = await r.json();
+    if(!j.success){
+      alert('Chyba reprintu: '+(j.error||j.message));
+      return;
+    }
+
+    // 2) Fyzický tisk na RPi
+    let printOk = false;
+    try{
+      const pr = await fetch(`${API}?action=proxy-reprint`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ receipt_number: num })
+      });
+      const prj = await pr.json();
+      printOk = pr.ok && prj.success;
+      if(!printOk){
+        console.warn('Proxy-reprint fail', prj);
+      }
+    }catch(e){
+      console.warn('Proxy-reprint network error', e);
+    }
+
+    // 3) UI update (badge + preview zavřít)
+    if(fromPreview) closeReceiptPreview();
+    // aktualizace badge v kartě
+    const badgeSelector = `.receipt-card .rc-title:contains("#${num}")`; // fallback níže
+    // Jednodušeji najdeme kartu přes query:
+    const cards = document.querySelectorAll('.receipt-card');
+    for(const card of cards){
+      if(card.innerHTML.includes('#'+num)){
+        // zjistit existující badge
+        let badge = card.querySelector('.badge');
+        let current = 0;
+        if (badge){
+          const m = badge.textContent.match(/(\d+)/);
+            if(m) current = parseInt(m[1])||0;
+        }
+        const newCount = current + 1;
+        if(!badge){
+          badge = document.createElement('span');
+          badge.className='badge';
+          card.appendChild(badge);
+        }
+        badge.textContent = 'Reprint: '+newCount;
+        break;
+      }
+    }
+
+    alert(printOk ? 'Účtenka #'+num+' znovu vytištěna.' : 'Účtenka #'+num+' uložena jako reprint, ale tisk selhal.');
+  }catch(e){
+    alert('Chyba reprintu: '+e.message);
+  }
+}
+
+/* Init */
+document.addEventListener('DOMContentLoaded',()=>{
+  setDatesInit();
+  loadFilters().then(loadReceipts);
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape') closeReceiptPreview();
+  });
+});
+
+/* Globál */
+window.viewReceipt=viewReceipt;
+window.closeReceiptPreview=closeReceiptPreview;
+window.reprint=reprint;
+window.loadReceipts=loadReceipts;
+</script>
+</body>
+</html>

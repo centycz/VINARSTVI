@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuchyň - Objednávky</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #36d1c4 0%, #2f80ed 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .nav-link {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        .nav-link.active { background: white; color: #2f80ed; }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 1.6em;
+            color: #2f80ed;
+            margin: 25px 0 10px 0;
+            font-weight: bold;
+        }
+        
+        .kitchen-stats {
+            background: rgba(255,255,255,0.9);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 0 auto 25px auto;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            border-left: 4px solid #36d1c4;
+        }
+
+        .stat-item.pizza { border-left-color: #2f80ed; }
+        .stat-item.pasta { border-left-color: #f2994a; }
+        .stat-item.appetizer { border-left-color: #27ae60; }
+        .stat-item.dessert { border-left-color: #e74c3c; }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2f80ed;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 1.1em;
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .order-card {
+            border: 3px solid #36d1c4;
+            border-radius: 15px;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.07);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+        }
+        
+        .order-card.urgent {
+            border-color: #f2994a;
+            background: #fdf5e3;
+        }
+        
+        .order-card.reserved {
+            border-color: #667eea;
+            background: #f0f3ff;
+        }
+        
+        .reservation-badge {
+            background: #667eea;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .table-number {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2f80ed;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .order-time {
+            color: #666;
+            font-size: 0.95em;
+        }
+        
+        .priority-badge {
+            background: #f2994a;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        
+        .order-items { 
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .order-item {
+            background: #f4fafd;
+            border-radius: 8px;
+            border-left: 4px solid #2f80ed;
+            padding: 12px 15px;
+            margin-bottom: 9px;
+            flex-grow: 1;
+        }
+        
+        .order-item.burnt {
+            background: #ffebee;
+            border-left: 4px solid #e57373;
+        }
+        
+        .order-item.burnt .item-name {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        
+        .item-name { font-weight: 600; color: #333; margin-bottom: 3px;}
+        .item-quantity { color: #666; font-size: 0.93em; margin-bottom: 3px;}
+        .item-note {
+            background: #e0f7fa;
+            border: 1px solid #b2ebf2;
+            border-radius: 6px;
+            padding: 6px 10px;
+            margin-top: 4px;
+            font-size: 0.95em;
+            color: #00796b;
+            font-style: italic;
+            line-height: 1.3;
+        }
+        
+        .item-actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+            min-height: 45px;
+        }
+
+        .btn-ready {
+            background: #2f80ed;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 12px 0;
+            margin: 0;
+        }
+
+        .btn-ready:hover { 
+            background: #1565c0; 
+            transform: translateY(-2px);
+        }
+
+        .last-update {
+            text-align: center;
+            color: #666;
+            font-size: 0.95em;
+            margin-top: 15px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .print-info {
+            margin: 10px 0;
+            padding: 8px 12px;
+            background: #e8f5e8;
+            border-radius: 6px;
+            font-size: 0.9em;
+            color: #2e7d32;
+        }
+        
+        @media (max-width: 700px) {
+            .orders-grid { grid-template-columns: 1fr; }
+            .container { padding: 10px; }
+            .kitchen-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👨‍🍳 Kuchyň</h1>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link" id="nav-obsluha">🏠 Objednávky</a>
+            <a href="kitchen.html" class="nav-link active" id="nav-kuchyn">👨‍🍳 Kuchyň</a>
+            <a href="pasta-kuchyn.html" class="nav-link " id="nav-pasta">🍝 Pasta kuchyň</a>
+            <a href="bar.html" class="nav-link" id="nav-bar">🍺 Bar</a>
+            <a href="serving.html" class="nav-link" id="nav-servirovani">🍽️ Servírování</a>
+            <a href="billing.html" class="nav-link" id="nav-uctovani">💰 Účtování</a>
+            <a href="historie.html" class="nav-link">📋 Historie</a>
+
+        </div>
+    </div>
+    
+    <!-- Statistiky kuchyně -->
+    <div class="kitchen-stats" id="kitchenStats">
+        <div class="stat-item pizza">
+            <div class="stat-number" id="pizzaCount">0</div>
+            <div class="stat-label">🍕 Pizzy</div>
+        </div>
+        <div class="stat-item pasta">
+            <div class="stat-number" id="pastaCount">0</div>
+            <div class="stat-label">🍝 Pasty</div>
+        </div>
+        <div class="stat-item appetizer">
+            <div class="stat-number" id="appetizerCount">0</div>
+            <div class="stat-label">🥗 Předkrmy</div>
+        </div>
+        <div class="stat-item dessert">
+            <div class="stat-number" id="dessertCount">0</div>
+            <div class="stat-label">🍰 Dezerty</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="section-title">Objednávky k přípravě</div>
+        <div class="orders-grid" id="ordersContainer"></div>
+        <div class="last-update">Poslední aktualizace: <span id="lastUpdate">-</span></div>
+    </div>
+
+    <script>
+    const API = 'api/restaurant-api.php';
+    let items = [];
+    let allKitchenItems = []; // Pro sledování všech položek
+
+    function markReady(id, name, btn) {
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Označuji...';
+
+            fetch(API + '?action=item-status', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    item_id: id,
+                    status: 'ready'
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Neodstraňujeme z DOM, jen refreshujeme
+                    loadOrders();
+                } else {
+                    console.error('Chyba při označování položky jako hotové:', result.error);
+                    btn.disabled = false;
+                    btn.textContent = 'Hotovo';
+                }
+            })
+            .catch(error => {
+                console.error('Chyba při označování položky jako hotové:', error);
+                btn.disabled = false;
+                btn.textContent = 'Hotovo';
+            });
+        }
+    }
+
+    // Funkce pro povolení past
+    function releasePasta(tableNumber, btn) {
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Povoluje...';
+
+            fetch(API + '?action=release-pasta-items', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    table_number: tableNumber,
+                    release_type: 'pasta'
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert(result.data.message);
+                    loadOrders();
+                } else {
+                    console.error('Chyba při povolování past:', result.error);
+                    btn.disabled = false;
+                    btn.textContent = '🍝 Povolit pastu';
+                    alert('Chyba: ' + result.error);
+                }
+            })
+            .catch(error => {
+                console.error('Chyba při povolování past:', error);
+                btn.disabled = false;
+                btn.textContent = '🍝 Povolit pastu';
+            });
+        }
+    }
+
+    // Funkce pro povolení dezertů s časovým zpožděním
+    function releaseDessert(tableNumber, btn) {
+        const delay = prompt('Za kolik minut má být dezert připraven? (0 = ihned)', '10');
+        
+        if (delay === null) return; // Zrušeno
+        
+        const delayMinutes = parseInt(delay) || 0;
+        let noteText = '';
+        
+        if (delayMinutes > 0) {
+            const serveTime = new Date();
+            serveTime.setMinutes(serveTime.getMinutes() + delayMinutes);
+            noteText = `Připravit na ${serveTime.toLocaleTimeString('cs-CZ', {hour: '2-digit', minute: '2-digit'})} (za ${delayMinutes} min)`;
+        } else {
+            noteText = 'Připravit ihned';
+        }
+
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Povoluje...';
+
+            fetch(API + '?action=release-dessert-with-timing', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    table_number: tableNumber,
+                    delay_minutes: delayMinutes,
+                    serve_note: noteText
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert(result.data.message);
+                    loadOrders();
+                } else {
+                    console.error('Chyba při povolování dezertů:', result.error);
+                    btn.disabled = false;
+                    btn.textContent = '🍰 Povolit dezert';
+                    alert('Chyba: ' + result.error);
+                }
+            })
+            .catch(error => {
+                console.error('Chyba při povolování dezertů:', error);
+                btn.disabled = false;
+                btn.textContent = '🍰 Povolit dezert';
+            });
+        }
+    }
+
+    function loadOrders() {
+        fetch(API + '?action=all-kitchen-items')
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    allKitchenItems = res.data.items;
+                    
+                    // Pro statistiky použijeme všechny položky
+                    updateKitchenStats(allKitchenItems);
+                    
+                    // Zobrazíme pizzy + stoly s hotovými pizzami (kde jsou čekající pasta/dezerty)
+                    const relevantItems = allKitchenItems.filter(item => 
+                        item.item_type === 'pizza' && ['pending', 'preparing', 'ready'].includes(item.status)
+                    );
+                    
+                    items = relevantItems;
+                    sortItems();
+                    renderOrders();
+                } else {
+                    console.error('API error:', res.error);
+                    items = [];
+                    allKitchenItems = [];
+                    updateKitchenStats([]);
+                }
+                
+                updateLastUpdateTime();
+            })
+            .catch(error => {
+                console.error('Chyba při načítání objednávek:', error);
+            });
+    }
+
+    function sortItems() {
+        items.sort((a, b) => {
+            // Priorita: pending > preparing > ready
+            const statusPriority = { 'pending': 1, 'preparing': 2, 'ready': 3 };
+            
+            if (statusPriority[a.status] !== statusPriority[b.status]) {
+                return statusPriority[a.status] - statusPriority[b.status];
+            }
+            
+            if (a.note === 'Spálená' && b.note !== 'Spálená') {
+                return -1;
+            }
+            if (a.note !== 'Spálená' && b.note === 'Spálená') {
+                return 1;
+            }
+            return new Date(a.created_at) - new Date(b.created_at);
+        });
+    }
+
+    // Funkce pro získání čekajících položek pro stůl
+    function getWaitingItemsForTable(tableSessionId) {
+        const waitingPasta = allKitchenItems.filter(item => 
+            item.table_session_id === tableSessionId && 
+            item.item_type === 'pasta' && 
+            item.status === 'pending'
+        );
+        
+        const waitingDesserts = allKitchenItems.filter(item => 
+            item.table_session_id === tableSessionId && 
+            item.item_type === 'dezert' && 
+            item.status === 'pending'
+        );
+        
+        return { waitingPasta, waitingDesserts };
+    }
+
+    // Aktualizace statistik
+    function updateKitchenStats(allItems) {
+        let pizzaCount = 0;
+        let pastaCount = 0;
+        let appetizerCount = 0;
+        let dessertCount = 0;
+        
+        if (allItems && allItems.length > 0) {
+            allItems.forEach(item => {
+                const quantity = parseInt(item.quantity) || 1;
+                
+                switch(item.item_type) {
+                    case 'pizza':
+                        pizzaCount += quantity;
+                        break;
+                    case 'pasta':
+                        pastaCount += quantity;
+                        break;
+                    case 'predkrm':
+                        appetizerCount += quantity;
+                        break;
+                    case 'dezert':
+                        dessertCount += quantity;
+                        break;
+                }
+            });
+        }
+        
+        // Aktualizuj DOM elementy
+        const pizzaEl = document.getElementById('pizzaCount');
+        const pastaEl = document.getElementById('pastaCount');
+        const appetizerEl = document.getElementById('appetizerCount');
+        const dessertEl = document.getElementById('dessertCount');
+        
+        if (pizzaEl) pizzaEl.textContent = pizzaCount;
+        if (pastaEl) pastaEl.textContent = pastaCount;
+        if (appetizerEl) appetizerEl.textContent = appetizerCount;
+        if (dessertEl) dessertEl.textContent = dessertCount;
+    }
+
+    function renderOrders() {
+        const container = document.getElementById('ordersContainer');
+        if (items.length === 0) {
+            container.innerHTML = `<div class="empty-state">
+                <span class="icon">🍕</span>
+                <h3>Žádné pizza objednávky</h3>
+                <p>Momentálně nejsou žádné pizzy k přípravě</p>
+            </div>`;
+            return;
+        }
+
+        const grouped = {};
+        items.forEach(order => {
+            const table = order.table_code || order.table_number || 'Neznámý';
+            if (!grouped[table]) grouped[table] = [];
+            grouped[table].push(order);
+        });
+
+        container.innerHTML = Object.entries(grouped).map(([table, tableItems]) => {
+            const oldest = tableItems.reduce((a, b) => a.id < b.id ? a : b);
+            const tableNumber = oldest.table_number;
+            const tableSessionId = oldest.table_session_id;
+            const printed_at = oldest.printed_at;
+            const isReserved = oldest.is_reserved === '1' || oldest.is_reserved === 1 || oldest.is_reserved === true;
+            
+            // Získej čekající položky pro tento stůl
+            const { waitingPasta, waitingDesserts } = getWaitingItemsForTable(tableSessionId);
+            
+            let printInfo = '';
+            if (printed_at) {
+                printInfo = `<div class="print-info">🖨️ Vytištěno v ${new Date(printed_at).toLocaleTimeString('cs-CZ')}</div>`;
+            } else {
+                printInfo = '<div class="print-info">✅ Objednávka byla automaticky vytištěna</div>';
+            }
+            
+            let minutesAgo = 0;
+            if (oldest.created_at) {
+                const orderTime = new Date(oldest.created_at);
+                const currentTime = new Date();
+                minutesAgo = Math.floor((currentTime - orderTime) / (1000 * 60));
+            }
+
+            const isUrgent = minutesAgo > 15;
+
+            // Info o čekajících položkách
+            let waitingInfo = '';
+            if (waitingPasta.length > 0 || waitingDesserts.length > 0) {
+                const pastaText = waitingPasta.length > 0 ? 
+                    `🍝 ${waitingPasta.reduce((sum, item) => sum + parseInt(item.quantity), 0)} past čeká` : '';
+                const dessertText = waitingDesserts.length > 0 ? 
+                    `🍰 ${waitingDesserts.reduce((sum, item) => sum + parseInt(item.quantity), 0)} dezertů čeká` : '';
+                
+                const infoTexts = [pastaText, dessertText].filter(text => text);
+                
+                if (infoTexts.length > 0) {
+                    waitingInfo = `
+                        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 8px; margin: 10px 0; font-size: 0.9em;">
+                            <strong>Čeká na povolení:</strong><br>
+                            ${infoTexts.join('<br>')}
+                        </div>
+                    `;
+                }
+            }
+
+            const itemsHTML = tableItems.map(pizza => {
+                const name = pizza.item_name || pizza.name || 'Položka';
+                const quantity = pizza.quantity || 1;
+                const note = pizza.note || '';
+                
+                let itemClass = 'order-item';
+                let statusText = '';
+                let actionButton = '';
+                
+                if (pizza.status === 'pending') {
+                    if (note === 'Spalena') {
+                        itemClass += ' burnt';
+                    }
+                    actionButton = `<button class="btn btn-ready" onclick="markReady(${pizza.id}, '${name}', this)">Hotovo</button>`;
+                } else if (pizza.status === 'preparing') {
+                    statusText = '<div style="color: #f39c12; font-weight: bold;">🔥 Připravuje se</div>';
+                    actionButton = `<button class="btn btn-ready" onclick="markReady(${pizza.id}, '${name}', this)">Hotovo</button>`;
+                } else if (pizza.status === 'ready') {
+                    statusText = '<div style="color: #27ae60; font-weight: bold;">✅ Hotová</div>';
+                    itemClass += ' ready';
+                }
+
+                return `
+                    <div class="${itemClass}" style="${pizza.status === 'ready' ? 'background: #e8f5e8; border-left-color: #27ae60;' : ''}">
+                        <div class="item-name">${name}</div>
+                        <div class="item-quantity">${quantity}×</div>
+                        ${statusText}
+                        ${note ? `<div class="item-note">${note}</div>` : ''}
+                        ${actionButton ? `<div class="item-actions">${actionButton}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            // Ovládací tlačítka - zobrazuj pouze pokud máme čekající položky
+            let controlButtons = '';
+            if (waitingPasta.length > 0 || waitingDesserts.length > 0) {
+                const pastaButton = waitingPasta.length > 0 ? 
+                    `<button class="btn" style="background: #f39c12; color: white; flex: 1; padding: 8px;" 
+                            onclick="releasePasta(${tableNumber}, this)">
+                        🍝 Povolit pastu (${waitingPasta.reduce((sum, item) => sum + parseInt(item.quantity), 0)})
+                    </button>` : '';
+                
+                const dessertButton = waitingDesserts.length > 0 ? 
+                    `<button class="btn" style="background: #9b59b6; color: white; flex: 1; padding: 8px;" 
+                            onclick="releaseDessert(${tableNumber}, this)">
+                        🍰 Povolit dezert (${waitingDesserts.reduce((sum, item) => sum + parseInt(item.quantity), 0)})
+                    </button>` : '';
+
+                if (pastaButton || dessertButton) {
+                    controlButtons = `
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            ${pastaButton}
+                            ${dessertButton}
+                        </div>
+                    `;
+                }
+            }
+
+            return `
+                <div class="order-card${isUrgent ? ' urgent' : ''}${isReserved ? ' reserved' : ''}">
+                    <div class="order-header">
+                        <div class="table-number">
+                            🍽️ ${table}${minutesAgo > 20 ? '<span class="priority-badge">PRIORITA</span>' : ''}
+                            ${isReserved ? '<span class="reservation-badge">📅 REZERVACE</span>' : ''}
+                        </div>
+                        <div class="order-time">⏱️ ${minutesAgo} min</div>
+                    </div>
+                    ${printInfo}
+                    ${waitingInfo}
+                    <div class="order-items">${itemsHTML}</div>
+                    ${controlButtons}
+                </div>
+            `;
+        }).join('');
+    }
+
+    function updateLastUpdateTime() {
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('cs-CZ');
+    }
+
+    // Inicializace
+    loadOrders();
+    setInterval(loadOrders, 5000);
+</script>
+</body>
+</html>
