@@ -492,15 +492,13 @@
 <body>
     <!-- HTML zůstává stejné -->
     <div class="header">
-        <h1>🍕 Pizza dal Cortile</h1>
+        <h1>🍷 Vinařství Stávek</h1>
         <div id="userInfo" class="user-info" style="display: none;">
             <span>👤 Přihlášen jako: <strong id="currentUser"></strong></span>
             <button class="logout-btn" onclick="logout()">Odhlásit se</button>
         </div>
         <div class="nav-links">
             <a href="index.html" class="nav-link active" id="nav-obsluha">🏠 Objednávky</a>
-            <a href="kitchen.html" class="nav-link" id="nav-kuchyn">👨‍🍳 Kuchyň</a>
-            <a href="pasta-kuchyn.html" class="nav-link " id="nav-pasta">🍝 Pasta kuchyň</a>
             <a href="bar.html" class="nav-link" id="nav-bar">🍺 Bar</a>
             <a href="serving.html" class="nav-link" id="nav-servirovani">🍽️ Servírování</a>
             <a href="billing.html" class="nav-link" id="nav-uctovani">💰 Účtování</a>
@@ -781,17 +779,12 @@
 
             // ✅ OPRAVENÉ MAPOVÁNÍ - PIAGGIO S JEDNÍM STOLEM XX
             const pergolOrder = [
-                { name: '🌿 Pergola 1', key: 'Pergola 1', tables: ['P11', 'P12', 'P13', 'P14'], cssClass: 'pergola-1 small' },
-                { name: '🌿 Pergola 2', key: 'Pergola 2', tables: ['P21', 'P22', 'P23', 'P24', 'P25a', 'P25b'], cssClass: 'pergola-2 medium' },
-              { name: '🌿 Pergola 3', key: 'Pergola 3', tables: ['P31', 'P32', 'P33', 'P34', 'P35a', 'P35b'], cssClass: 'pergola-3 medium' },
-                { name: '🌿 Pergola 4', key: 'Pergola 4', tables: ['P41', 'P42', 'P43'], cssClass: 'pergola-4 small' },
-                { name: '🫒 Olivy', key: 'Olivy', tables: ['O1', 'O2', 'O3', 'O4', 'O5', 'O6', 'O7', 'O8'], cssClass: 'olivy large' },
-                { name: '📦 Sebou', key: 'Sebou', tables: ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9'], cssClass: 'sebou sebou' },
-                { name: '🚗 Auto', key: 'Auto', tables: ['A1', 'A2'], cssClass: 'auto small' },
-                { name: '🛵 Piaggio', key: 'PIAGGIO', tables: ['XX'], cssClass: 'piaggio piaggio' },
-                { name: '🌤️ Venku', key: 'VENKU', tables: ['V1','V2','V3'], cssClass: 'venku small' }
-                
-            ];
+    { name: '🍷 Terasa', key: 'Terasa', tables: ['1', '2'], cssClass: 'terasa small' },
+    { name: '🍇 Zahrada', key: 'Zahrada', tables: ['3', '4'], cssClass: 'zahrada small' },
+    { name: '🍾 Sklípek', key: 'Sklípek', tables: ['5', '6'], cssClass: 'sklipek small' },
+    { name: '🥂 Dvorek', key: 'Dvorek', tables: ['7', '8', '9'], cssClass: 'dvorek small' },
+    { name: '📦 Sebou', key: 'Sebou', tables: ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9'], cssClass: 'sebou sebou' }
+];
 
             // Seskupení stolů podle lokace
             const locationGroups = {};
